@@ -181,65 +181,65 @@ export const ShipmentsManager: React.FC = () => {
     <div className="space-y-5">
       {/* Top View Mode Switcher: Table View vs Live Map vs Split */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button
             onClick={() => setViewMode('TABLE')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
               viewMode === 'TABLE'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <TableIcon className="w-4 h-4 text-slate-600" />
-            <span>جدول الشحنات والعمليات</span>
+            <TableIcon className="w-4 h-4 text-slate-600 shrink-0" />
+            <span>جدول الشحنات</span>
           </button>
 
           <button
             onClick={() => setViewMode('MAP')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
               viewMode === 'MAP'
                 ? 'bg-amber-500 text-slate-950 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <MapIcon className="w-4 h-4 text-slate-950" />
-            <span>خريطة التتبع الميداني للمناديب (مسارات لحظية)</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <MapIcon className="w-4 h-4 text-slate-950 shrink-0" />
+            <span>خريطة المسارات</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
           </button>
 
           <button
             onClick={() => setViewMode('HEATMAP')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
               viewMode === 'HEATMAP'
                 ? 'bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Flame className={`w-4 h-4 ${viewMode === 'HEATMAP' ? 'text-amber-200 animate-pulse' : 'text-amber-500'}`} />
-            <span>الخريطة الحرارية وتوزيع الكثافة الذكي</span>
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+            <Flame className={`w-4 h-4 shrink-0 ${viewMode === 'HEATMAP' ? 'text-amber-200 animate-pulse' : 'text-amber-500'}`} />
+            <span>الخريطة الحرارية</span>
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0"></span>
           </button>
 
           <button
             onClick={() => setViewMode('SPLIT')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
               viewMode === 'SPLIT'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Columns className="w-4 h-4 text-slate-300" />
-            <span>عرض مدمج (الخريطة + الشحنات)</span>
+            <Columns className="w-4 h-4 text-slate-300 shrink-0" />
+            <span>عرض مدمج</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-600 px-2">
+        <div className="flex items-center gap-3 text-xs text-slate-600 px-2 shrink-0">
           <span className="flex items-center gap-1 font-bold text-slate-800">
-            <Compass className="w-4 h-4 text-amber-500" />
-            <span>تتبع مسارات {couriers.length} مناديب ميدانيين</span>
+            <Compass className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>{couriers.length} مناديب ميدانيين</span>
           </span>
           <span className="text-slate-300">|</span>
-          <span className="font-mono text-slate-500">{filteredShipments.length} شحنة معروضة</span>
+          <span className="font-mono text-slate-500">{filteredShipments.length} شحنة</span>
         </div>
       </div>
 

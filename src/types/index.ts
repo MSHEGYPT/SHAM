@@ -32,6 +32,8 @@ export interface AuthUser {
   joinedDate: string;
   token?: string;
   vehiclePlate?: string;
+  isAuthenticated?: boolean;
+  hierarchyRank?: number; // 1: Owner/Admin, 2: Supervisor, 3: Accountant, 4: Courier, 5: Merchant, 0: Guest
 }
 
 export interface WorkerTask {
@@ -262,4 +264,13 @@ export interface Merchant {
   returnRate: number;
   pendingBalance: number; // مستحقات كاش تنتظر التوريد لحسابه
   rating: number;
+}
+
+export interface NavigationHistoryEntry {
+  id: string;
+  role: UserRole;
+  adminTab?: string;
+  modalOpen?: string | null;
+  label: string;
+  timestamp: number;
 }

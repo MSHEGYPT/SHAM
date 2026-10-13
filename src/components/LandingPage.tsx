@@ -50,18 +50,21 @@ interface LandingPageProps {
   onOpenAiChat: () => void;
   onOpenOrderParser: () => void;
   onOpenComplaintsDesk?: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenAiChat,
   onOpenOrderParser,
   onOpenComplaintsDesk,
+  onOpenAuthModal,
 }) => {
   const {
     shipments,
     getShipmentByTracking,
     addAgendaTask,
     setCurrentRole,
+    navigateToView,
     governoratesCoverage,
   } = useLogistics();
 
@@ -396,24 +399,19 @@ print("Shipment Created:", response.json())`;
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-[11px] shadow-xs cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-[11px] shadow-xs cursor-pointer transition-colors shrink-0"
             title="الصفحة الرئيسية (مشاوير)"
           >
-            <Home className="w-3.5 h-3.5 text-slate-950" />
+            <Home className="w-3.5 h-3.5 text-slate-950 shrink-0" />
             <span>الرئيسية</span>
           </button>
           <button
-            onClick={() => setCurrentRole('MERCHANT')}
-            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-[11px] transition-colors cursor-pointer flex items-center gap-1 border border-slate-700"
+            onClick={() => onOpenAuthModal?.()}
+            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold rounded-lg text-[11px] transition-colors cursor-pointer flex items-center gap-1.5 border border-slate-700 shrink-0"
+            title="تسجيل الدخول وتحليل الهوية وفق نموذج الدوائر الأمنية"
           >
-            <Building2 className="w-3 h-3 text-amber-400" />
-            <span>بوابة التاجر</span>
-          </button>
-          <button
-            onClick={() => setCurrentRole('ADMIN')}
-            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-[11px] transition-colors cursor-pointer flex items-center gap-1 border border-slate-700"
-          >
-            <span>لوحة العمليات</span>
+            <Lock className="w-3 h-3 text-amber-400 shrink-0" />
+            <span>تسجيل الدخول وتحديد الرتبة</span>
           </button>
         </div>
       </div>
@@ -996,10 +994,11 @@ print("Shipment Created:", response.json())`;
                     </span>
                     <button
                       type="button"
-                      onClick={() => setCurrentRole('MERCHANT')}
-                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs cursor-pointer shadow-sm"
+                      onClick={() => onOpenAuthModal?.()}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold rounded-xl text-xs cursor-pointer shadow-sm flex items-center gap-1.5"
                     >
-                      دخول بوابة التاجر الآن
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>دخول بوابة التاجر المعتمدة</span>
                     </button>
                   </div>
                 </div>
@@ -2019,19 +2018,20 @@ print("Shipment Created:", response.json())`;
 
             <button
               type="button"
-              onClick={() => setCurrentRole('MERCHANT')}
+              onClick={() => onOpenAuthModal?.()}
               className="px-6 py-4 bg-white/90 hover:bg-white text-slate-950 font-black rounded-2xl text-sm transition-all shadow-md cursor-pointer flex items-center gap-2 border border-slate-300"
             >
-              <Building2 className="w-4 h-4" />
-              <span>معاينة بوابة التاجر مباشرة</span>
+              <Lock className="w-4 h-4 text-amber-600" />
+              <span>تسجيل دخول الشركاء والمتاجر</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setCurrentRole('ADMIN')}
-              className="px-6 py-4 bg-slate-900/10 hover:bg-slate-900/20 text-slate-950 font-bold rounded-2xl text-sm transition-all cursor-pointer border border-slate-900/20"
+              onClick={() => onOpenAuthModal?.()}
+              className="px-6 py-4 bg-slate-900/10 hover:bg-slate-900/20 text-slate-950 font-bold rounded-2xl text-sm transition-all cursor-pointer border border-slate-900/20 flex items-center gap-2"
             >
-              <span>لوحة العمليات والمناديب</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>دخول الكادر الإداري والميداني</span>
             </button>
           </div>
         </div>

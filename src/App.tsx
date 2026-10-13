@@ -35,22 +35,32 @@ import {
   ClipboardList,
   Crown,
   Home,
+  ArrowRight,
+  X,
+  Lock,
 } from 'lucide-react';
 
 const MainContent: React.FC = () => {
-  const { currentRole, agenda, fraudAnomalies, onboardingApplications } = useLogistics();
-
-  // Admin / Operations internal tabs
-  const [adminActiveTab, setAdminActiveTab] = useState<
-    | 'SHIPMENTS'
-    | 'ONBOARDING_SUPERVISION'
-    | 'WORKER_OPERATIONS'
-    | 'AGENDA'
-    | 'FRAUD_SHIELD'
-    | 'STAFF'
-    | 'PICKUPS'
-    | 'FINANCE'
-  >('SHIPMENTS');
+  const {
+    currentRole,
+    setCurrentRole,
+    currentUser,
+    agenda,
+    fraudAnomalies,
+    onboardingApplications,
+    activeAdminTab,
+    setActiveAdminTab,
+    canGoBack,
+    previousPageLabel,
+    goBack,
+    navigateToView,
+    getRoleLabel,
+    canAccessRole,
+    canAccessCircle,
+    canAccessAdminTab,
+    clearanceNotice,
+    setClearanceNotice,
+  } = useLogistics();
 
   // Modals state
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
@@ -59,8 +69,6 @@ const MainContent: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isComplaintsDeskOpen, setIsComplaintsDeskOpen] = useState(false);
   const [showOnionView, setShowOnionView] = useState(false);
-
-  const { setCurrentRole, currentUser } = useLogistics();
 
   const pendingAnomaliesCount = fraudAnomalies.filter((a) => a.status === 'PENDING_INVESTIGATION').length;
   const newAgendaCount = agenda.filter((t) => t.status === 'NEW').length;
@@ -75,16 +83,36 @@ const MainContent: React.FC = () => {
         onOpenAiChat={() => setIsAiChatOpen(true)}
         onOpenOrderParser={() => setIsOrderParserOpen(true)}
         onOpenTracking={() => setIsTrackingModalOpen(true)}
-        onOpenNewPickup={() => setAdminActiveTab('PICKUPS')}
+        onOpenNewPickup={() => {
+          setActiveAdminTab('PICKUPS');
+          if (currentRole === 'CUSTOMER') setCurrentRole('ADMIN');
+        }}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenComplaintsDesk={() => setIsComplaintsDeskOpen(true)}
         onToggleOnionView={() => setShowOnionView(!showOnionView)}
         showOnionView={showOnionView}
-        onSelectAdminTab={(tab) => setAdminActiveTab(tab as any)}
+        onSelectAdminTab={(tab) => setActiveAdminTab(tab as any)}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Hierarchical Clearance Barrier Alert Banner */}
+        {clearanceNotice && (
+          <div className="bg-rose-50 border border-rose-300 text-rose-900 px-4 py-3 rounded-2xl flex items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+              <span className="font-bold">{clearanceNotice}</span>
+            </div>
+            <button
+              onClick={() => setClearanceNotice(null)}
+              className="p-1 hover:bg-rose-100 rounded-lg text-rose-700 cursor-pointer"
+              title="إغلاق التنبيه"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Owner Layer Simulation Alert Bar */}
         {isOwnerPreviewing && (
           <div className="bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-sm font-bold text-xs border border-amber-600">
@@ -109,13 +137,13 @@ const MainContent: React.FC = () => {
         )}
 
         {/* Onion Ring Security Architecture Visualizer (can be toggled from header) */}
-        {showOnionView && (
+        {showOnionView && canAccessCircle(1) && (
           <div className="animate-in fade-in slide-in-from-top-3">
             <OnionRingNavigator
               onSelectRing={(level) => {
-                if (level === 2) setAdminActiveTab('ONBOARDING_SUPERVISION');
-                else if (level === 4) setAdminActiveTab('WORKER_OPERATIONS');
-                else if (level === 3) setAdminActiveTab('FINANCE');
+                if (level === 2) setActiveAdminTab('ONBOARDING_SUPERVISION');
+                else if (level === 4) setActiveAdminTab('WORKER_OPERATIONS');
+                else if (level === 3) setActiveAdminTab('FINANCE');
               }}
             />
           </div>
@@ -127,23 +155,43 @@ const MainContent: React.FC = () => {
             onOpenAiChat={() => setIsAiChatOpen(true)}
             onOpenOrderParser={() => setIsOrderParserOpen(true)}
             onOpenComplaintsDesk={() => setIsComplaintsDeskOpen(true)}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
           />
         )}
 
         {/* VIEW 2: Courier Field View & Tasks */}
         {currentRole === 'COURIER' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="flex items-center gap-2">
-                <Truck className="w-5 h-5 text-purple-600" />
-                <span className="font-bold text-sm text-slate-900">
-                  دائرة العمليات الميدانية للمندوب والعامل
-                </span>
+            {/* Courier Breadcrumbs & Back Bar */}
+            <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {canGoBack && (
+                  <button
+                    onClick={goBack}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-300 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={`الرجوع إلى: ${previousPageLabel || 'السابق'}`}
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                    <span>رجوع</span>
+                    {previousPageLabel && <span className="hidden sm:inline text-amber-700 font-normal">({previousPageLabel})</span>}
+                  </button>
+                )}
+                <button
+                  onClick={() => navigateToView('CUSTOMER', undefined, 'الصفحة الرئيسية')}
+                  className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>الرئيسية</span>
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="font-bold text-purple-700 shrink-0">دائرة العمليات الميدانية للمندوب (الدائرة #4)</span>
               </div>
-              <span className="text-xs bg-purple-50 text-purple-800 font-bold px-3 py-1 rounded-full border border-purple-200">
+
+              <span className="text-[11px] bg-purple-50 text-purple-800 font-bold px-3 py-1 rounded-full border border-purple-200 shrink-0 hidden sm:inline">
                 الدائرة الأمنية #4
               </span>
             </div>
+
             <WorkerTasksAndProfileRing />
             <div className="pt-6 border-t border-slate-200">
               <CourierAppView />
@@ -153,10 +201,42 @@ const MainContent: React.FC = () => {
 
         {/* VIEW 3: Merchant Portal View */}
         {currentRole === 'MERCHANT' && (
-          <MerchantPortalView
-            onOpenOrderParser={() => setIsOrderParserOpen(true)}
-            onOpenNewPickup={() => setIsAiChatOpen(true)}
-          />
+          <div className="space-y-6">
+            {/* Merchant Breadcrumbs & Back Bar */}
+            <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {canGoBack && (
+                  <button
+                    onClick={goBack}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-300 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={`الرجوع إلى: ${previousPageLabel || 'السابق'}`}
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                    <span>رجوع</span>
+                    {previousPageLabel && <span className="hidden sm:inline text-amber-700 font-normal">({previousPageLabel})</span>}
+                  </button>
+                )}
+                <button
+                  onClick={() => navigateToView('CUSTOMER', undefined, 'الصفحة الرئيسية')}
+                  className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>الرئيسية</span>
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="font-bold text-slate-800 shrink-0">بوابة التاجر والمتجر (الدائرة #5)</span>
+              </div>
+
+              <span className="text-[11px] bg-slate-100 text-slate-700 font-bold px-3 py-1 rounded-full border border-slate-200 shrink-0 hidden sm:inline">
+                الشركاء التجاريين
+              </span>
+            </div>
+
+            <MerchantPortalView
+              onOpenOrderParser={() => setIsOrderParserOpen(true)}
+              onOpenNewPickup={() => setIsAiChatOpen(true)}
+            />
+          </div>
         )}
 
         {/* VIEW 4: Operations & HQ (Admin / Supervisor / Accountant) */}
@@ -164,141 +244,195 @@ const MainContent: React.FC = () => {
           currentRole === 'OPERATIONS' ||
           currentRole === 'ACCOUNTANT') && (
           <div className="space-y-6">
-            {/* Admin Internal Sub-nav Tabs */}
+            {/* Admin Breadcrumb Navigation & Quick Back Bar */}
+            <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5">
+                {canGoBack && (
+                  <button
+                    onClick={goBack}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-300 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={`الرجوع إلى: ${previousPageLabel || 'السابق'}`}
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                    <span>رجوع</span>
+                    {previousPageLabel && (
+                      <span className="hidden sm:inline text-amber-800 font-normal">({previousPageLabel})</span>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigateToView('CUSTOMER', undefined, 'الصفحة الرئيسية')}
+                  className="text-slate-500 hover:text-slate-900 font-bold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>الرئيسية</span>
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="text-slate-700 font-bold shrink-0">
+                  لوحة الإدارة والعمليات (الدائرة #{currentUser.assignedRingLevel})
+                </span>
+                <span className="text-slate-300">/</span>
+                <span className="text-amber-600 font-black shrink-0">
+                  {getRoleLabel(currentRole, activeAdminTab)}
+                </span>
+              </div>
+
+              <div className="text-[11px] text-slate-400 font-medium hidden md:flex items-center gap-1 shrink-0">
+                <span>نموذج الدوائر الأمنية المعتمد</span>
+              </div>
+            </div>
+
+            {/* Admin Internal Sub-nav Tabs - Structured, Responsive, and Never Overflowing */}
             <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               <button
-                onClick={() => {
-                  setCurrentRole('CUSTOMER');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 shadow-xs"
+                onClick={() => navigateToView('CUSTOMER', undefined, 'الصفحة الرئيسية')}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 shadow-xs shrink-0"
                 title="الانتقال إلى الصفحة الرئيسية العامة (واجهة مشاوير للزوار والتجار)"
               >
-                <Home className="w-4 h-4 text-amber-700" />
+                <Home className="w-4 h-4 text-amber-700 shrink-0" />
                 <span>الصفحة الرئيسية</span>
               </button>
 
-              <button
-                onClick={() => setAdminActiveTab('SHIPMENTS')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'SHIPMENTS'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <Package className="w-4 h-4 text-amber-400" />
-                <span>الشحنات والاستلامات والمرتجعات</span>
-              </button>
+              {canAccessAdminTab('SHIPMENTS') && (
+                <button
+                  onClick={() => setActiveAdminTab('SHIPMENTS')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'SHIPMENTS'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Package className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>الشحنات والاستلامات والمرتجعات</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('ONBOARDING_SUPERVISION')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'ONBOARDING_SUPERVISION'
-                    ? 'bg-blue-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <UserCheck className="w-4 h-4 text-blue-400" />
-                <span>الدائرة الإدارية: تسجيل العاملين والرقابة</span>
-                {pendingOnboardingCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
-                    {pendingOnboardingCount}
-                  </span>
-                )}
-              </button>
+              {canAccessAdminTab('ONBOARDING_SUPERVISION') && (
+                <button
+                  onClick={() => setActiveAdminTab('ONBOARDING_SUPERVISION')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'ONBOARDING_SUPERVISION'
+                      ? 'bg-blue-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 text-blue-400 shrink-0" />
+                  <span>الدائرة الإدارية: تسجيل العاملين والرقابة</span>
+                  {pendingOnboardingCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                      {pendingOnboardingCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('WORKER_OPERATIONS')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'WORKER_OPERATIONS'
-                    ? 'bg-purple-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <ClipboardList className="w-4 h-4 text-purple-400" />
-                <span>دائرة العاملين: مهام الأعمال والبيانات</span>
-              </button>
+              {canAccessAdminTab('WORKER_OPERATIONS') && (
+                <button
+                  onClick={() => setActiveAdminTab('WORKER_OPERATIONS')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'WORKER_OPERATIONS'
+                      ? 'bg-purple-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>دائرة العاملين: مهام الأعمال والبيانات</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('AGENDA')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'AGENDA'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <CalendarCheck className="w-4 h-4 text-amber-400" />
-                <span>جدول الأعمال والأرشفة الذكية</span>
-                {newAgendaCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold">
-                    {newAgendaCount}
-                  </span>
-                )}
-              </button>
+              {canAccessAdminTab('AGENDA') && (
+                <button
+                  onClick={() => setActiveAdminTab('AGENDA')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'AGENDA'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <CalendarCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>جدول الأعمال والأرشفة الذكية</span>
+                  {newAgendaCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                      {newAgendaCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('FRAUD_SHIELD')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'FRAUD_SHIELD'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <ShieldAlert className="w-4 h-4 text-rose-500" />
-                <span>درع النزاهة ومكافحة الفساد</span>
-                {pendingAnomaliesCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-bold">
-                    {pendingAnomaliesCount}
-                  </span>
-                )}
-              </button>
+              {/* Fraud Shield - STRICTLY Core Ring 1 (Owner Only) */}
+              {canAccessAdminTab('FRAUD_SHIELD') && (
+                <button
+                  onClick={() => setActiveAdminTab('FRAUD_SHIELD')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'FRAUD_SHIELD'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>درع النزاهة ومكافحة الفساد (خاص بالمالك)</span>
+                  {pendingAnomaliesCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-bold shrink-0">
+                      {pendingAnomaliesCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('STAFF')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'STAFF'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <Users className="w-4 h-4 text-amber-400" />
-                <span>الهيكل التنظيمي وكادر الشركة</span>
-              </button>
+              {/* Staff Tree - STRICTLY Core Ring 1 (Owner Only) */}
+              {canAccessAdminTab('STAFF') && (
+                <button
+                  onClick={() => setActiveAdminTab('STAFF')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'STAFF'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>الهيكل التنظيمي وكادر الشركة</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('PICKUPS')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'PICKUPS'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <Calendar className="w-4 h-4 text-amber-400" />
-                <span>جدولة الاستلام من المتاجر</span>
-              </button>
+              {canAccessAdminTab('PICKUPS') && (
+                <button
+                  onClick={() => setActiveAdminTab('PICKUPS')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'PICKUPS'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>جدولة الاستلام من المتاجر</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => setAdminActiveTab('FINANCE')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  adminActiveTab === 'FINANCE'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <Coins className="w-4 h-4 text-emerald-400" />
-                <span>الخزينة والتسويات المالية</span>
-              </button>
+              {canAccessAdminTab('FINANCE') && (
+                <button
+                  onClick={() => setActiveAdminTab('FINANCE')}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                    activeAdminTab === 'FINANCE'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Coins className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>الخزينة والتسويات المالية</span>
+                </button>
+              )}
             </div>
 
-            {/* Sub-view Content */}
-            {adminActiveTab === 'SHIPMENTS' && <ShipmentsManager />}
-            {adminActiveTab === 'ONBOARDING_SUPERVISION' && <StaffOnboardingAndSupervisionRing />}
-            {adminActiveTab === 'WORKER_OPERATIONS' && <WorkerTasksAndProfileRing />}
-            {adminActiveTab === 'AGENDA' && <OperationsAgenda />}
-            {adminActiveTab === 'FRAUD_SHIELD' && <ZeroCorruptionShield />}
-            {adminActiveTab === 'STAFF' && <StaffManagement />}
-            {adminActiveTab === 'PICKUPS' && <PickupScheduler />}
-            {adminActiveTab === 'FINANCE' && <FinancialSettlements />}
+            {/* Sub-view Content with Hierarchical Access Enforcement */}
+            {activeAdminTab === 'SHIPMENTS' && canAccessAdminTab('SHIPMENTS') && <ShipmentsManager />}
+            {activeAdminTab === 'ONBOARDING_SUPERVISION' && canAccessAdminTab('ONBOARDING_SUPERVISION') && <StaffOnboardingAndSupervisionRing />}
+            {activeAdminTab === 'WORKER_OPERATIONS' && canAccessAdminTab('WORKER_OPERATIONS') && <WorkerTasksAndProfileRing />}
+            {activeAdminTab === 'AGENDA' && canAccessAdminTab('AGENDA') && <OperationsAgenda />}
+            {activeAdminTab === 'FRAUD_SHIELD' && canAccessAdminTab('FRAUD_SHIELD') && <ZeroCorruptionShield />}
+            {activeAdminTab === 'STAFF' && canAccessAdminTab('STAFF') && <StaffManagement />}
+            {activeAdminTab === 'PICKUPS' && canAccessAdminTab('PICKUPS') && <PickupScheduler />}
+            {activeAdminTab === 'FINANCE' && canAccessAdminTab('FINANCE') && <FinancialSettlements />}
           </div>
         )}
       </main>

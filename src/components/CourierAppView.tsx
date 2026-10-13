@@ -228,30 +228,30 @@ export const CourierAppView: React.FC = () => {
 
       {/* View Switcher: Deliveries Route List vs Scanner Component */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
           <button
             onClick={() => setActiveTab('LIST')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               activeTab === 'LIST'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Truck className="w-4 h-4 text-slate-700" />
+            <Truck className="w-4 h-4 text-slate-700 shrink-0" />
             <span>شحنات خط السير ({activeDeliveries.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('SCANNER')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               activeTab === 'SCANNER'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-purple-700 hover:bg-purple-50'
             }`}
           >
-            <QrCode className="w-4 h-4" />
-            <span>ماسح الـ QR الميداني (Scanner)</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-black">
+            <QrCode className="w-4 h-4 shrink-0" />
+            <span>ماسح الـ QR الميداني</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-black shrink-0">
               لحظي
             </span>
           </button>

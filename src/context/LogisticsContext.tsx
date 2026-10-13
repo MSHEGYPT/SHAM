@@ -16,6 +16,7 @@ import {
   FulfillmentItem,
   PayoutTransaction,
   GovernorateCoverage,
+  NavigationHistoryEntry,
 } from '../types';
 import {
   INITIAL_STAFF,
@@ -50,6 +51,23 @@ interface LogisticsContextType {
   setActiveCourierId: (id: string) => void;
   activeMerchantId: string;
   setActiveMerchantId: (id: string) => void;
+
+  // Navigation & History Tracking (إجراء الرجوع وسجل التنقل)
+  navigationHistory: NavigationHistoryEntry[];
+  canGoBack: boolean;
+  previousPageLabel: string | null;
+  goBack: () => void;
+  navigateToView: (role: UserRole, adminTab?: string, label?: string) => void;
+  activeAdminTab: string;
+  setActiveAdminTab: (tab: any) => void;
+  getRoleLabel: (role: UserRole, adminTab?: string) => string;
+
+  // Hierarchical Access & Visibility Guards (الرؤية الهرمية - محدش يشوف خصائص الدائرة الأعلى)
+  canAccessRole: (role: UserRole) => boolean;
+  canAccessCircle: (ringLevel: OnionRingLevel) => boolean;
+  canAccessAdminTab: (tab: string) => boolean;
+  clearanceNotice: string | null;
+  setClearanceNotice: (notice: string | null) => void;
 
   // Data
   staff: StaffMember[];
@@ -141,7 +159,21 @@ interface LogisticsContextType {
   resetToDemoData: () => void;
 }
 
-const DEFAULT_OWNER_USER: AuthUser = {
+export const DEFAULT_GUEST_USER: AuthUser = {
+  id: 'USR-GUEST-00',
+  name: 'زائر عام (غير مسجل)',
+  role: 'CUSTOMER',
+  emailOrPhone: '',
+  department: 'البوابة العامة والتتبع',
+  assignedRingLevel: 5,
+  ringName: 'الدائرة العامة (الزوار والعملاء)',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  joinedDate: new Date().toISOString().slice(0, 10),
+  isAuthenticated: false,
+  hierarchyRank: 0,
+};
+
+export const DEFAULT_OWNER_USER: AuthUser = {
   id: 'USR-ROOT-01',
   name: 'م. طارق العسقلاني (صاحب المنظومة والمدير العام)',
   role: 'ADMIN',
@@ -152,6 +184,8 @@ const DEFAULT_OWNER_USER: AuthUser = {
   ringName: 'الدائرة الأولى (نواة المنظومة - المدير العام وصاحب الموقع)',
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
   joinedDate: '2023-01-15',
+  isAuthenticated: true,
+  hierarchyRank: 1,
 };
 
 const LogisticsContext = createContext<LogisticsContextType | undefined>(undefined);
@@ -167,18 +201,181 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Auth & Onion Ring Level
+  // Auth & Onion Ring Level - Defaults to Public Guest if not previously authenticated
   const [currentUser, setCurrentUser] = useState<AuthUser>(() =>
-    loadStorage('current_user', DEFAULT_OWNER_USER)
+    loadStorage('current_user', DEFAULT_GUEST_USER)
   );
   const [currentRingLevel, setCurrentRingLevel] = useState<OnionRingLevel>(
-    currentUser.assignedRingLevel || 1
+    currentUser.assignedRingLevel || 5
   );
 
   // Active Role and Personas
-  const [currentRole, setCurrentRole] = useState<UserRole>('ADMIN');
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    if (currentUser.isAuthenticated && currentUser.role) {
+      if (currentUser.role === 'ADMIN') return 'ADMIN';
+      if (currentUser.role === 'OPERATIONS' || currentUser.role === 'OPERATIONS_SUPERVISOR') return 'OPERATIONS';
+      if (currentUser.role === 'ACCOUNTANT') return 'ACCOUNTANT';
+      if (currentUser.role === 'COURIER') return 'COURIER';
+      if (currentUser.role === 'MERCHANT') return 'MERCHANT';
+    }
+    return 'CUSTOMER';
+  });
+  const [activeAdminTab, setActiveAdminTab] = useState<string>('SHIPMENTS');
   const [activeCourierId, setActiveCourierId] = useState<string>('STF-04');
   const [activeMerchantId, setActiveMerchantId] = useState<string>('MCH-101');
+  const [clearanceNotice, setClearanceNotice] = useState<string | null>(null);
+
+  // Strict Hierarchical Guard: Check if current user is allowed to access targetRole
+  const canAccessRole = (role: UserRole): boolean => {
+    if (role === 'CUSTOMER') return true; // Public homepage is accessible to everyone
+    if (!currentUser.isAuthenticated) return false; // Non-authenticated users cannot access any internal circle
+    const rank = currentUser.hierarchyRank ?? (currentUser.assignedRingLevel || 0);
+
+    // Rank 1 (Owner / Admin) can access all roles
+    if (rank === 1) return true;
+
+    // Rank 2 (Operations / Supervisor) can access Operations, Courier, Merchant, Customer. CANNOT access Admin root.
+    if (rank === 2) {
+      return role === 'OPERATIONS' || role === 'COURIER' || role === 'MERCHANT' || role === 'CUSTOMER';
+    }
+
+    // Rank 3 (Accountant) can ONLY access Accountant and Customer
+    if (rank === 3) {
+      return role === 'ACCOUNTANT' || role === 'CUSTOMER';
+    }
+
+    // Rank 4 (Courier) can ONLY access Courier and Customer
+    if (rank === 4) {
+      return role === 'COURIER' || role === 'CUSTOMER';
+    }
+
+    // Rank 5 (Merchant) can ONLY access Merchant and Customer
+    if (rank === 5) {
+      return role === 'MERCHANT' || role === 'CUSTOMER';
+    }
+
+    return false;
+  };
+
+  // Strict Hierarchical Guard for Onion Ring Levels
+  const canAccessCircle = (ringLevel: OnionRingLevel): boolean => {
+    if (!currentUser.isAuthenticated) return false;
+    const rank = currentUser.hierarchyRank ?? (currentUser.assignedRingLevel || 0);
+    if (rank === 1) return true; // Owner has full oversight
+    if (rank === 2) return ringLevel >= 2; // Supervisor can access ring 2..5, but NOT ring 1
+    return rank === ringLevel; // Lower circles can only access their designated circle
+  };
+
+  // Strict Hierarchical Guard for Admin/Operations sub-tabs
+  const canAccessAdminTab = (tab: string): boolean => {
+    if (!currentUser.isAuthenticated) return false;
+    const rank = currentUser.hierarchyRank ?? (currentUser.assignedRingLevel || 0);
+    if (rank === 1) return true; // Owner has all tabs
+    if (rank === 2) {
+      // Supervisor: can access operations tabs, NOT Fraud shield (whistleblower confidential) or Staff salaries
+      return ['SHIPMENTS', 'ONBOARDING_SUPERVISION', 'WORKER_OPERATIONS', 'AGENDA', 'PICKUPS'].includes(tab);
+    }
+    if (rank === 3) {
+      // Accountant: can access Finance and Shipments
+      return ['FINANCE', 'SHIPMENTS'].includes(tab);
+    }
+    return false;
+  };
+
+  // Navigation History Stack (سجل التنقل وإجراء الرجوع)
+  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryEntry[]>([]);
+
+  const getRoleLabel = (role: UserRole, adminTab?: string): string => {
+    if (role === 'CUSTOMER') return 'الصفحة الرئيسية للزوار';
+    if (role === 'MERCHANT') return 'بوابة التاجر والمتجر';
+    if (role === 'COURIER') return 'دائرة العمليات الميدانية للمندوب';
+    if (role === 'ADMIN' || role === 'OPERATIONS' || role === 'ACCOUNTANT') {
+      const tab = adminTab || activeAdminTab;
+      switch (tab) {
+        case 'SHIPMENTS': return 'الشحنات والاستلامات';
+        case 'ONBOARDING_SUPERVISION': return 'الدائرة الإدارية ورقابة العاملين';
+        case 'WORKER_OPERATIONS': return 'دائرة مهام الأعمال والبيانات';
+        case 'AGENDA': return 'جدول الأعمال والأرشفة';
+        case 'FRAUD_SHIELD': return 'درع النزاهة ومكافحة الفساد';
+        case 'STAFF': return 'الهيكل التنظيمي وكادر الشركة';
+        case 'PICKUPS': return 'جدولة استلام الشحنات';
+        case 'FINANCE': return 'الخزينة والتسويات المالية';
+        default: return 'لوحة إدارة المنظومة';
+      }
+    }
+    return 'الرئيسية';
+  };
+
+  const navigateToView = (targetRole: UserRole, targetTab?: string, label?: string) => {
+    // Check hierarchical role clearance
+    if (!canAccessRole(targetRole)) {
+      setClearanceNotice(
+        `عفواً، هذه الواجهة مخصصة للدائرة الأمنية الأعلى. رتبتك الحالية هي: (${currentUser.name} - الدائرة #${currentUser.assignedRingLevel}). لا يمكن تخطي التدرج الهرمي للصلاحيات.`
+      );
+      return;
+    }
+
+    // Check tab clearance if targetTab is requested
+    if (targetTab && !canAccessAdminTab(targetTab)) {
+      setClearanceNotice(
+        `عفواً، هذا القسم يتطلب صلاحيات الدائرة الأولى (المدير العام والمالك). رتبتك الحالية لا تتيح لك الوصول لهذا الإجراء.`
+      );
+      return;
+    }
+
+    setClearanceNotice(null);
+    const entry: NavigationHistoryEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      role: currentRole,
+      adminTab: activeAdminTab,
+      label: label || getRoleLabel(currentRole, activeAdminTab),
+      timestamp: Date.now(),
+    };
+
+    setNavigationHistory((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.role === currentRole && last.adminTab === activeAdminTab) {
+        return prev;
+      }
+      return [...prev.slice(-15), entry];
+    });
+
+    setCurrentRole(targetRole);
+    if (targetTab) {
+      setActiveAdminTab(targetTab);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goBack = () => {
+    if (navigationHistory.length === 0) return;
+    const historyCopy = [...navigationHistory];
+    const previousEntry = historyCopy.pop();
+    if (!previousEntry) return;
+
+    setNavigationHistory(historyCopy);
+    setCurrentRole(previousEntry.role);
+    if (previousEntry.adminTab) {
+      setActiveAdminTab(previousEntry.adminTab);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const canGoBack = navigationHistory.length > 0;
+  const previousPageLabel = navigationHistory.length > 0
+    ? navigationHistory[navigationHistory.length - 1].label
+    : null;
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (navigationHistory.length > 0) {
+        goBack();
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigationHistory]);
+
 
   // Core Data
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStorage('staff', INITIAL_STAFF));
@@ -254,7 +451,11 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     let ring: OnionRingLevel = 1;
 
     if (roleRequested === 'ADMIN' || roleRequested === 'GENERAL_MANAGER') {
-      targetUser = { ...DEFAULT_OWNER_USER };
+      targetUser = {
+        ...DEFAULT_OWNER_USER,
+        isAuthenticated: true,
+        hierarchyRank: 1,
+      };
       ring = 1;
       setCurrentRole('ADMIN');
     } else if (roleRequested === 'OPERATIONS_SUPERVISOR' || roleRequested === 'OPERATIONS') {
@@ -270,6 +471,8 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ringName: 'الدائرة الإدارية والرقابية (المشرفون)',
         avatar: s.avatar,
         joinedDate: s.joinedDate,
+        isAuthenticated: true,
+        hierarchyRank: 2,
       };
       ring = 2;
       setCurrentRole('OPERATIONS');
@@ -286,6 +489,8 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ringName: 'الدائرة المالية وتدقيق الخزينة',
         avatar: s.avatar,
         joinedDate: s.joinedDate,
+        isAuthenticated: true,
+        hierarchyRank: 3,
       };
       ring = 3;
       setCurrentRole('ACCOUNTANT');
@@ -303,6 +508,8 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         avatar: s.avatar,
         joinedDate: s.joinedDate,
         vehiclePlate: s.vehiclePlate,
+        isAuthenticated: true,
+        hierarchyRank: 4,
       };
       ring = 4;
       setCurrentRole('COURIER');
@@ -319,6 +526,8 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ringName: 'الدائرة الخارجية (الشركاء والعملاء)',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
         joinedDate: '2023-10-01',
+        isAuthenticated: true,
+        hierarchyRank: 5,
       };
       ring = 5;
       setCurrentRole('MERCHANT');
@@ -334,6 +543,8 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ringName: 'الدائرة الخارجية (الشركاء والعملاء)',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         joinedDate: new Date().toISOString().slice(0, 10),
+        isAuthenticated: false,
+        hierarchyRank: 0,
       };
       ring = 5;
       setCurrentRole('CUSTOMER');
@@ -456,7 +667,12 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const logoutUser = () => {
-    quickSwitchUser('CUSTOMER');
+    setCurrentUser(DEFAULT_GUEST_USER);
+    setCurrentRingLevel(5);
+    setCurrentRole('CUSTOMER');
+    setNavigationHistory([]);
+    setClearanceNotice(null);
+    localStorage.removeItem('sanad_current_user');
   };
 
   // Quick 1-click switcher between personas for demo/testing
@@ -1113,6 +1329,19 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         quickSwitchUser,
         currentRole,
         setCurrentRole,
+        navigationHistory,
+        canGoBack,
+        previousPageLabel,
+        goBack,
+        navigateToView,
+        activeAdminTab,
+        setActiveAdminTab,
+        getRoleLabel,
+        canAccessRole,
+        canAccessCircle,
+        canAccessAdminTab,
+        clearanceNotice,
+        setClearanceNotice,
         activeCourierId,
         setActiveCourierId,
         activeMerchantId,
