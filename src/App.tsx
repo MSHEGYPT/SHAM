@@ -34,6 +34,7 @@ import {
   UserCheck,
   ClipboardList,
   Crown,
+  Home,
 } from 'lucide-react';
 
 const MainContent: React.FC = () => {
@@ -165,6 +166,18 @@ const MainContent: React.FC = () => {
           <div className="space-y-6">
             {/* Admin Internal Sub-nav Tabs */}
             <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <button
+                onClick={() => {
+                  setCurrentRole('CUSTOMER');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 shadow-xs"
+                title="الانتقال إلى الصفحة الرئيسية العامة (واجهة مشاوير للزوار والتجار)"
+              >
+                <Home className="w-4 h-4 text-amber-700" />
+                <span>الصفحة الرئيسية</span>
+              </button>
+
               <button
                 onClick={() => setAdminActiveTab('SHIPMENTS')}
                 className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${

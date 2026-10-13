@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Eye,
   RotateCcw,
+  Home,
 } from 'lucide-react';
 import { useLogistics } from '../context/LogisticsContext';
 import { UserRole } from '../types';
@@ -217,14 +218,21 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 2. MAIN NAV BAR (Conditioned strictly by Current Role) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
-          {/* Logo & Platform Name */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-amber-400 shadow-sm">
+          {/* Logo & Platform Name (Clickable link to Homepage) */}
+          <button
+            onClick={() => {
+              setCurrentRole('CUSTOMER');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-2.5 text-right hover:opacity-90 transition-all cursor-pointer group focus:outline-none"
+            title="الصفحة الرئيسية - مشاوير"
+          >
+            <div className="w-10 h-10 rounded-xl bg-slate-900 group-hover:bg-amber-500 flex items-center justify-center text-amber-400 group-hover:text-slate-950 shadow-sm transition-colors">
               <Truck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-black text-slate-900 tracking-tight">مَشَاوِيرْ</span>
+                <span className="text-xl font-black text-slate-900 tracking-tight group-hover:text-amber-600 transition-colors">مَشَاوِيرْ</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold border border-amber-200">
                   لوجستكس
                 </span>
@@ -239,17 +247,29 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'منظومة التوصيل والرقابة الذكية'}
               </p>
             </div>
-          </div>
+          </button>
 
           {/* Nav Links / Actions based on Active Role */}
           {/* ========================================= */}
 
           {/* A. VISITOR / CUSTOMER MENU */}
           {currentRole === 'CUSTOMER' && (
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Home Page Active Button */}
+              <button
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 rounded-xl shadow-xs transition-colors cursor-pointer border border-amber-500"
+                title="أنت الآن في الصفحة الرئيسية"
+              >
+                <Home className="w-4 h-4 text-slate-950" />
+                <span>الرئيسية</span>
+              </button>
+
               <button
                 onClick={onOpenTracking}
-                className="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 transition-colors cursor-pointer"
+                className="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 transition-colors cursor-pointer px-2.5 py-2 hover:bg-slate-100 rounded-xl"
               >
                 <Search className="w-3.5 h-3.5 text-slate-400" />
                 <span>تتبع شحنة</span>
@@ -285,6 +305,18 @@ export const Header: React.FC<HeaderProps> = ({
           {/* B. MERCHANT MENU */}
           {currentRole === 'MERCHANT' && (
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCurrentRole('CUSTOMER');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-amber-200"
+                title="العودة إلى الصفحة الرئيسية"
+              >
+                <Home className="w-3.5 h-3.5 text-amber-600" />
+                <span>الرئيسية</span>
+              </button>
+
               <button
                 onClick={onOpenOrderParser}
                 className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 transition-colors cursor-pointer"
@@ -326,6 +358,18 @@ export const Header: React.FC<HeaderProps> = ({
           {currentRole === 'COURIER' && (
             <div className="flex items-center gap-2">
               <button
+                onClick={() => {
+                  setCurrentRole('CUSTOMER');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-amber-200"
+                title="العودة إلى الصفحة الرئيسية"
+              >
+                <Home className="w-3.5 h-3.5 text-amber-600" />
+                <span>الرئيسية</span>
+              </button>
+
+              <button
                 onClick={onOpenComplaintsDesk}
                 className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 transition-colors cursor-pointer"
               >
@@ -354,6 +398,20 @@ export const Header: React.FC<HeaderProps> = ({
           {/* D. ADMIN / MANAGEMENT MENU */}
           {(currentRole === 'ADMIN' || currentRole === 'OPERATIONS' || currentRole === 'ACCOUNTANT') && (
             <div className="flex items-center gap-2">
+              {/* Home Page Link for Admin */}
+              <button
+                onClick={() => {
+                  setCurrentRole('CUSTOMER');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 rounded-xl border border-amber-300 transition-colors cursor-pointer shadow-xs"
+                title="الذهاب إلى الصفحة الرئيسية العامة (واجهة مشاوير للعملاء والتجار)"
+              >
+                <Home className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden sm:inline">الصفحة الرئيسية</span>
+                <span className="sm:hidden">الرئيسية</span>
+              </button>
+
               {/* Onion Rings Architecture Toggle for Admin */}
               <button
                 onClick={onToggleOnionView}
