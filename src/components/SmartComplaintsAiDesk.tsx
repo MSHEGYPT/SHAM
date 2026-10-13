@@ -108,10 +108,10 @@ export const SmartComplaintsAiDesk: React.FC<SmartComplaintsAiDeskProps> = ({
         ? 'الزميل كابتن التوصيل'
         : 'العميل العزيز';
 
-    const greeting = `أهلاً بك يا فندم. أنا "معتز الشناوي" - مدير إدارة حل النزاعات والشكاوى والنزاهة المؤسسية بشركة سند للخدمات اللوجستية.
+    const greeting = `أهلاً بك يا فندم. أنا "معتز الشناوي" - مدير إدارة حل النزاعات والشكاوى والنزاهة المؤسسية بشركة مشاوير للخدمات اللوجستية.
 أنا هنا لأستمع إليك شخصياً، ومكتبي مفتوح لمناقشة أي مشكلة أو سلوك غير لائق واجهته بكل دقة وشفافية.
 
-في شركة سند، نطبق سياسة (صفر تسامح) مع أي تلاعب بالأسعار، أو طلب مبالغ خارج البوليصة، أو تأخير غير مبرر، أو سوء خلق من أي موظف.
+في شركة مشاوير، نطبق سياسة (صفر تسامح) مع أي تلاعب بالأسعار، أو طلب مبالغ خارج البوليصة، أو تأخير غير مبرر، أو سوء خلق من أي موظف.
 تفضل بذكر تفاصيل ما حدث معك، وما هو رقم الشحنة أو اسم المندوب إن وُجد؟ حقك محفوظ وسأوضح لك فوراً الإجراءات الإدارية التي سنتخذها.`;
 
     setMessages([
@@ -382,7 +382,7 @@ export const SmartComplaintsAiDesk: React.FC<SmartComplaintsAiDeskProps> = ({
               {msg.sender === 'DIRECTOR' ? (
                 <>
                   <div className="w-6 h-6 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-[10px]">
-                    سند
+                    مشاوير
                   </div>
                   <span className="font-bold text-slate-900">أ. معتز الشناوي</span>
                   <span className="text-[10px] text-slate-500">{msg.timestamp}</span>

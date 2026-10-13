@@ -80,7 +80,7 @@ export const BostaEcosystemHub: React.FC = () => {
             </h2>
             <p className="text-xs sm:text-sm text-rose-100 mt-2 max-w-2xl leading-relaxed">
               جمعنا أفضل ابتكارات منصة بوسطة العالمية (تحويل الكاش ثاني يوم، خدمة الاستبدال الفوري، بوت
-              الواتساب الآلي، وتغطية 27 محافظة) مع درع سند الرقمي لمنع الفساد وكود الأمان المشفر.
+              الواتساب الآلي، وتغطية 27 محافظة) مع درع مشاوير الرقمي لمنع الفساد وكود الأمان المشفر.
             </p>
           </div>
 
@@ -218,7 +218,7 @@ export const BostaEcosystemHub: React.FC = () => {
                 <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-2 text-xs">
                   <h4 className="font-bold text-amber-950 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-amber-700" />
-                    <span>دورة التحصيل السريع اليومية في سند:</span>
+                    <span>دورة التحصيل السريع اليومية في مشاوير:</span>
                   </h4>
                   <ol className="list-decimal list-inside space-y-1 text-slate-700">
                     <li>يستلم العميل الطرد ويدخل كود الأمان المشفر OTP لتحصيل الكاش.</li>
@@ -439,7 +439,7 @@ export const BostaEcosystemHub: React.FC = () => {
                   عند إنشاء البوليصة، فينتظر المندوب فتح العميل للطرد والتأكد من المقاس والمواصفات قبل دفع الكاش.
                 </p>
                 <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1.5">
-                  <span className="font-bold text-slate-800 block">ضوابط المعاينة العادلة في سند:</span>
+                  <span className="font-bold text-slate-800 block">ضوابط المعاينة العادلة في مشاوير:</span>
                   <p className="text-slate-600">✓ المعاينة تتم بحضور المندوب وتقتصر على الفحص الظاهري والمقاس.</p>
                   <p className="text-slate-600">✓ في حال الرفض، يدفع العميل مصاريف الشحن فقط ويعود الطرد بحالته.</p>
                   <p className="text-slate-600">✓ توثيق المعاينة في تقرير الرحلة الميدانية للمندوب.</p>
@@ -570,7 +570,7 @@ export const BostaEcosystemHub: React.FC = () => {
                 </div>
 
                 <button className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl cursor-pointer">
-                  طلب نقل بضاعتك لمستودع سند اليوم
+                  طلب نقل بضاعتك لمستودع مشاوير اليوم
                 </button>
               </div>
             </div>
@@ -614,10 +614,10 @@ export const BostaEcosystemHub: React.FC = () => {
               <div className="max-w-sm mx-auto w-full bg-[#0b141a] rounded-3xl p-3 shadow-2xl border-4 border-slate-800 text-white">
                 <div className="bg-[#202c33] p-3 rounded-2xl flex items-center gap-2.5 mb-3">
                   <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-white text-xs">
-                    سند
+                    مشاوير
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-white">سند إكسبريس (بوت الشحن الآلي)</h4>
+                    <h4 className="font-bold text-xs text-white">مشاوير إكسبريس (بوت الشحن الآلي)</h4>
                     <span className="text-[10px] text-emerald-400">متصل الآن - حساب أعمال موثق ✓</span>
                   </div>
                 </div>
@@ -723,7 +723,7 @@ export const BostaEcosystemHub: React.FC = () => {
                 { name: 'Shopify', desc: 'مزامنة تلقائية للأوردرات', badge: 'بلجن معتمد' },
                 { name: 'WooCommerce', desc: 'إضافة ووكومرس الرسمية', badge: 'تثبيت بنقرة' },
                 { name: 'Salla (سلة)', desc: 'ربط مباشر لمتجر سلة', badge: 'سحابي' },
-                { name: 'Zid (زد)', desc: 'تطبيق سند على متجر زد', badge: 'سحابي' },
+                { name: 'Zid (زد)', desc: 'تطبيق مشاوير على متجر زد', badge: 'سحابي' },
                 { name: 'EasyOrders', desc: 'لمتاجر السوشيال ميديا', badge: 'سريع' },
                 { name: 'Custom API', desc: 'توثيق REST كامل مع Webhooks', badge: 'للمطورين' },
               ].map((plugin, idx) => (

@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
               <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
                 <Truck className="w-5 h-5" />
               </div>
-              <span className="text-lg font-black text-white">سَنَدْ للخدمات اللوجستية</span>
+              <span className="text-lg font-black text-white">مَشَاوِيرْ للخدمات اللوجستية</span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed">
               منظومة متكاملة للتوصيل الذكي وحماية حقوق التجار والعملاء بميثاق "زيرو فساد" والتحقق برمز
@@ -90,14 +90,14 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-slate-500" />
-                <span className="font-mono">support@sanad-logistics.com</span>
+                <span className="font-mono">support@mashaweer-logistics.com</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-12 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px]">
-          <p>© 2026 سند للخدمات اللوجستية وإدارة التوصيل. جميع الحقوق محفوظة.</p>
+          <p>© 2026 مشاوير للخدمات اللوجستية وإدارة التوصيل. جميع الحقوق محفوظة.</p>
           <p className="flex items-center gap-1">
             <span>صُممت المنظومة بمعايير مكافحة الفساد والأمانة المؤسسية</span>
           </p>

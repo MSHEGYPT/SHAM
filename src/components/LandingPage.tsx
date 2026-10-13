@@ -381,7 +381,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             معايير صارمة
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-            لماذا تثق المتاجر الكبرى في شركة سند؟
+            لماذا تثق المتاجر الكبرى في شركة مشاوير؟
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
             صممنا المنظومة هندسياً لمنع أي تلاعب وحماية كل قرش يخص التاجر والعميل
@@ -439,7 +439,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               تعاقد فوري مدعوم بالذكاء الاصطناعي
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-white">
-              ابدأ شحن أوردراتك اليوم مع شركة سند
+              ابدأ شحن أوردراتك اليوم مع شركة مشاوير
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
               سجل بيانات متجرك الآن، وسيقوم الذكاء الاصطناعي بتقييم حجم شحناتك فوراً وتقديم باقة أسعار

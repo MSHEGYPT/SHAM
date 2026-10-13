@@ -532,7 +532,7 @@ export const MerchantPortalView: React.FC<MerchantPortalViewProps> = ({
                 <span>مستودع التخزين والـ Fulfillment المركزي</span>
               </h3>
               <p className="text-xs text-slate-500">
-                منتجاتك المخزنة في مستودع سند الرئيسي. يتم تعبئة وتغليف وشحن أي طلب تلقائياً في أقل من 12 ساعة.
+                منتجاتك المخزنة في مستودع مشاوير الرئيسي. يتم تعبئة وتغليف وشحن أي طلب تلقائياً في أقل من 12 ساعة.
               </p>
             </div>
             <button

@@ -39,7 +39,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({ isOpen, onCl
     {
       id: 'm-welcome',
       sender: 'ai',
-      text: 'أهلاً بك في منصة "سند للخدمات اللوجستية وإدارة التوصيل"! أنا مساعدك الذكي لمتابعة الشحنات، الرد على الاستفسارات، وتنظيم طلبات التعاقد والاستلام وأرشفتها مباشرة في جدول أعمال إدارة العمليات. كيف يمكنني خدمتك اليوم؟',
+      text: 'أهلاً بك في منصة "مشاوير للخدمات اللوجستية وإدارة التوصيل"! أنا مساعدك الذكي لمتابعة الشحنات، الرد على الاستفسارات، وتنظيم طلبات التعاقد والاستلام وأرشفتها مباشرة في جدول أعمال إدارة العمليات. كيف يمكنني خدمتك اليوم؟',
       timestamp: 'الآن',
     },
   ]);
@@ -141,7 +141,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({ isOpen, onCl
         {
           id: `ai-err-${Date.now()}`,
           sender: 'ai',
-          text: 'تم استلام طلبك وتسجيله في سجل مراجعات العمليات. سيتواصل معك أحد ممثلي إدارة سند قريباً.',
+          text: 'تم استلام طلبك وتسجيله في سجل مراجعات العمليات. سيتواصل معك أحد ممثلي إدارة مشاوير قريباً.',
           timestamp: 'الآن',
         },
       ]);
@@ -296,7 +296,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({ isOpen, onCl
           </form>
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
             <span>مدعوم بنموذج Gemini 3.8 Flash مع خوارزمية الرقابة الذكية</span>
-            <span>نظام سند اللوجستي المعتمد</span>
+            <span>نظام مشاوير اللوجستي المعتمد</span>
           </div>
         </div>
       </div>

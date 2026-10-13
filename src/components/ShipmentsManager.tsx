@@ -21,10 +21,16 @@ import {
   ShieldCheck,
   ShieldAlert,
   QrCode,
+  Map as MapIcon,
+  Table as TableIcon,
+  Columns,
+  Compass,
+  Flame,
 } from 'lucide-react';
 import { useLogistics } from '../context/LogisticsContext';
 import { Shipment, ShipmentStatus } from '../types';
 import { ShipmentQrModal } from './ShipmentQrModal';
+import { CourierFieldRoutesMap, getCourierStatusInfo } from './CourierFieldRoutesMap';
 
 export const ShipmentsManager: React.FC = () => {
   const {
@@ -36,7 +42,15 @@ export const ShipmentsManager: React.FC = () => {
     recordReturnOrPartial,
   } = useLogistics();
 
+  const [viewMode, setViewMode] = useState<'TABLE' | 'MAP' | 'HEATMAP' | 'SPLIT'>('TABLE');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle applying smart zone allocation to balance deliveries
+  const handleApplySmartAllocation = (trackingNumbers: string[], courierId: string) => {
+    trackingNumbers.forEach((tn) => {
+      assignShipmentCourier(tn, courierId);
+    });
+  };
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [qrModalShipment, setQrModalShipment] = useState<Shipment | null>(null);
@@ -165,49 +179,130 @@ export const ShipmentsManager: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Search and Filters Header */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Status Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedStatus(tab.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
-                selectedStatus === tab.id
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search & Add Order Button */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-72">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="بحث برقم البوليصة (SND-..)، العميل، أو التاجر..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-lg pr-9 pl-3 py-1.5 text-xs text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-slate-900"
-            />
-          </div>
+      {/* Top View Mode Switcher: Table View vs Live Map vs Split */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit">
+          <button
+            onClick={() => setViewMode('TABLE')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'TABLE'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <TableIcon className="w-4 h-4 text-slate-600" />
+            <span>جدول الشحنات والعمليات</span>
+          </button>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors shrink-0 shadow-xs cursor-pointer"
+            onClick={() => setViewMode('MAP')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'MAP'
+                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
-            <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span>تسجيل شحنة جديدة</span>
+            <MapIcon className="w-4 h-4 text-slate-950" />
+            <span>خريطة التتبع الميداني للمناديب (مسارات لحظية)</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           </button>
+
+          <button
+            onClick={() => setViewMode('HEATMAP')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'HEATMAP'
+                ? 'bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Flame className={`w-4 h-4 ${viewMode === 'HEATMAP' ? 'text-amber-200 animate-pulse' : 'text-amber-500'}`} />
+            <span>الخريطة الحرارية وتوزيع الكثافة الذكي</span>
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('SPLIT')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'SPLIT'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Columns className="w-4 h-4 text-slate-300" />
+            <span>عرض مدمج (الخريطة + الشحنات)</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-slate-600 px-2">
+          <span className="flex items-center gap-1 font-bold text-slate-800">
+            <Compass className="w-4 h-4 text-amber-500" />
+            <span>تتبع مسارات {couriers.length} مناديب ميدانيين</span>
+          </span>
+          <span className="text-slate-300">|</span>
+          <span className="font-mono text-slate-500">{filteredShipments.length} شحنة معروضة</span>
         </div>
       </div>
 
-      {/* Shipments Table */}
+      {/* Interactive Map Component (Displayed in MAP, HEATMAP, and SPLIT modes) */}
+      {(viewMode === 'MAP' || viewMode === 'HEATMAP' || viewMode === 'SPLIT') && (
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <CourierFieldRoutesMap
+            key={viewMode === 'HEATMAP' ? 'view-heatmap-active' : 'view-routes-map'}
+            staff={staff}
+            shipments={shipments}
+            onSelectShipment={(shp) => setSelectedShipment(shp)}
+            initialHeatmapActive={viewMode === 'HEATMAP'}
+            onApplySmartAllocation={handleApplySmartAllocation}
+          />
+        </div>
+      )}
+
+      {/* Search and Filters Header (Displayed in TABLE and SPLIT modes) */}
+      {viewMode !== 'MAP' && viewMode !== 'HEATMAP' && (
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedStatus(tab.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedStatus === tab.id
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search & Add Order Button */}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-72">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="بحث برقم البوليصة (SND-..)، العميل، أو التاجر..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg pr-9 pl-3 py-1.5 text-xs text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-slate-900"
+              />
+            </div>
+
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors shrink-0 shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-amber-400" />
+              <span>تسجيل شحنة جديدة</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Shipments Table (Displayed in TABLE and SPLIT modes) */}
+      {viewMode !== 'MAP' && viewMode !== 'HEATMAP' && (
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
@@ -280,13 +375,55 @@ export const ShipmentsManager: React.FC = () => {
                       <span className="text-[9px] text-slate-400 block mt-0.5">خاص بالمستلم</span>
                     </td>
 
-                    {/* Courier Assignment */}
+                    {/* Courier Assignment with Live Visual Status Indicator */}
                     <td className="py-3.5 px-4">
                       {shp.assignedCourierName ? (
-                        <div className="flex items-center gap-1.5 text-slate-800 font-medium">
-                          <Truck className="w-3.5 h-3.5 text-slate-500" />
-                          <span>{shp.assignedCourierName}</span>
-                        </div>
+                        (() => {
+                          const assignedStaff = staff.find(
+                            (s) =>
+                              s.id === shp.assignedCourierId ||
+                              s.name === shp.assignedCourierName
+                          );
+                          const statusInfo = assignedStaff
+                            ? getCourierStatusInfo(assignedStaff, shipments)
+                            : null;
+
+                          return (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-slate-900 font-bold">
+                                <Truck className="w-3.5 h-3.5 text-slate-600" />
+                                <span>{shp.assignedCourierName}</span>
+                              </div>
+
+                              {statusInfo && (
+                                <div className="flex items-center gap-1.5">
+                                  {/* Visual Colored Status Dot & Badge Indicator */}
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badgeBg} ${statusInfo.badgeText} ${statusInfo.borderColor}`}
+                                    title={`حالة المندوب: ${statusInfo.labelAr}`}
+                                  >
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotColor} ${
+                                        statusInfo.status === 'BUSY_DELIVERING'
+                                          ? 'animate-ping'
+                                          : ''
+                                      }`}
+                                    ></span>
+                                    <span>{statusInfo.labelAr}</span>
+                                  </span>
+
+                                  <button
+                                    onClick={() => setViewMode('SPLIT')}
+                                    className="text-[10px] text-amber-600 hover:text-amber-700 underline font-semibold cursor-pointer"
+                                    title="عرض خط سير المندوب على الخريطة التفاعلية"
+                                  >
+                                    تتبع على الخريطة
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div className="relative">
                           <button
@@ -407,6 +544,7 @@ export const ShipmentsManager: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Modal: View Shipment Audit Details */}
       {selectedShipment && (

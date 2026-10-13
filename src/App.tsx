@@ -33,6 +33,7 @@ import {
   Layers,
   UserCheck,
   ClipboardList,
+  Crown,
 } from 'lucide-react';
 
 const MainContent: React.FC = () => {
@@ -299,7 +300,7 @@ const MainContent: React.FC = () => {
           <Bot className="w-6 h-6 text-amber-400" />
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900 animate-ping"></span>
         </div>
-        <span className="hidden sm:inline text-xs font-bold">مساعد سند الذكي</span>
+        <span className="hidden sm:inline text-xs font-bold">مساعد مشاوير الذكي</span>
       </button>
 
       {/* Modals */}

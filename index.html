@@ -3,9 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سند للخدمات اللوجستية وإدارة التوصيل</title>
+    <script>
+      // Safeguard for browser extensions / iframe inspectors attempting to assign window.fetch
+      (function() {
+        try {
+          var _origFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : undefined;
+          var _currentFetch = _origFetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return _currentFetch;
+            },
+            set: function(val) {
+              _currentFetch = val;
+            }
+          });
+        } catch (_err) {
+          // Continue if already configured or immutable
+        }
+      })();
+    </script>
+    <title>مشاوير للخدمات اللوجستية وإدارة التوصيل</title>
     <meta name="description" content="منظومة متكاملة لإدارة مكاتب وشركات التوصيل، الربط بين التجار والعملاء والمناديب، الجدولة اللحظية، مكافحة الفساد، والذكاء الاصطناعي لأرشفة الطلبات." />
-    <meta property="og:title" content="سند للخدمات اللوجستية وإدارة التوصيل" />
+    <meta property="og:title" content="مشاوير للخدمات اللوجستية وإدارة التوصيل" />
     <meta property="og:description" content="منظومة متكاملة لإدارة مكاتب وشركات التوصيل، الربط بين التجار والعملاء والمناديب، الجدولة اللحظية، مكافحة الفساد، والذكاء الاصطناعي لأرشفة الطلبات." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
