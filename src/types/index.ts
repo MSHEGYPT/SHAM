@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'OPERATIONS' | 'ACCOUNTANT' | 'COURIER' | 'MERCHANT' | 'CUSTOMER';
+export type UserRole = 'ADMIN' | 'OPERATIONS' | 'ACCOUNTANT' | 'COURIER' | 'MERCHANT' | 'CUSTOMER' | 'JOB_SEEKER';
 
 export type StaffRole = 'GENERAL_MANAGER' | 'OPERATIONS_SUPERVISOR' | 'DISPATCHER' | 'ACCOUNTANT' | 'CUSTOMER_CARE' | 'COURIER';
 
@@ -34,6 +34,8 @@ export interface AuthUser {
   vehiclePlate?: string;
   isAuthenticated?: boolean;
   hierarchyRank?: number; // 1: Owner/Admin, 2: Supervisor, 3: Accountant, 4: Courier, 5: Merchant, 0: Guest
+  firebaseUid?: string;
+  isGoogleUser?: boolean;
 }
 
 export interface WorkerTask {
@@ -273,4 +275,29 @@ export interface NavigationHistoryEntry {
   modalOpen?: string | null;
   label: string;
   timestamp: number;
+}
+
+export interface MerchantRegistrationData {
+  name: string;
+  brandName: string;
+  phone: string;
+  city: string;
+  address: string;
+  businessType: string;
+  bankOrInstaPay?: string;
+  notes?: string;
+}
+
+export interface JobApplicantData {
+  fullName: string;
+  phone: string;
+  nationalId: string;
+  desiredRole: StaffRole;
+  assignedZone: string;
+  vehicleType: 'MOTORCYCLE' | 'CAR' | 'VAN' | 'BICYCLE' | 'NONE';
+  vehiclePlate?: string;
+  drivingLicenseNumber?: string;
+  emergencyContact: string;
+  experienceYears?: number;
+  notes?: string;
 }

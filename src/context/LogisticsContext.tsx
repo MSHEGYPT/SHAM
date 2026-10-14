@@ -17,6 +17,8 @@ import {
   PayoutTransaction,
   GovernorateCoverage,
   NavigationHistoryEntry,
+  MerchantRegistrationData,
+  JobApplicantData,
 } from '../types';
 import {
   INITIAL_STAFF,
@@ -33,6 +35,8 @@ import {
   INITIAL_FULFILLMENT_ITEMS,
   INITIAL_PAYOUT_TRANSACTIONS,
 } from '../data/initialData';
+import { signInWithGoogle, logoutFromFirebase, db } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface LogisticsContextType {
   // Authentication & Onion Rings
@@ -40,6 +44,7 @@ interface LogisticsContextType {
   currentRingLevel: OnionRingLevel;
   setCurrentRingLevel: (level: OnionRingLevel) => void;
   loginUser: (identifier: string, role: UserRole | string) => Promise<{ success: boolean; aiAudit?: any }>;
+  loginWithGoogle: () => Promise<{ success: boolean; message: string; error?: string }>;
   registerUser: (formData: any) => Promise<{ success: boolean; aiAudit?: any; message: string }>;
   logoutUser: () => void;
   quickSwitchUser: (presetId: 'OWNER' | 'SUPERVISOR' | 'ACCOUNTANT' | 'COURIER' | 'MERCHANT' | 'CUSTOMER') => void;
@@ -90,6 +95,7 @@ interface LogisticsContextType {
     method: 'INSTAPAY' | 'BANK_TRANSFER' | 'FAWRY' | 'WALLET',
     accountDetails: string
   ) => { success: boolean; message: string; transaction?: PayoutTransaction };
+  registerMerchant: (data: MerchantRegistrationData) => Merchant;
 
   // Onion Rings Operations
   addWorkerTask: (task: Omit<WorkerTask, 'id'>) => WorkerTask;
@@ -227,7 +233,7 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Strict Hierarchical Guard: Check if current user is allowed to access targetRole
   const canAccessRole = (role: UserRole): boolean => {
-    if (role === 'CUSTOMER') return true; // Public homepage is accessible to everyone
+    if (role === 'CUSTOMER' || role === 'JOB_SEEKER') return true; // Public homepage and job applicant portal are accessible to everyone
     if (!currentUser.isAuthenticated) return false; // Non-authenticated users cannot access any internal circle
     const rank = currentUser.hierarchyRank ?? (currentUser.assignedRingLevel || 0);
 
@@ -236,22 +242,22 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Rank 2 (Operations / Supervisor) can access Operations, Courier, Merchant, Customer. CANNOT access Admin root.
     if (rank === 2) {
-      return role === 'OPERATIONS' || role === 'COURIER' || role === 'MERCHANT' || role === 'CUSTOMER';
+      return role === 'OPERATIONS' || role === 'COURIER' || role === 'MERCHANT';
     }
 
-    // Rank 3 (Accountant) can ONLY access Accountant and Customer
+    // Rank 3 (Accountant) can ONLY access Accountant
     if (rank === 3) {
-      return role === 'ACCOUNTANT' || role === 'CUSTOMER';
+      return role === 'ACCOUNTANT';
     }
 
-    // Rank 4 (Courier) can ONLY access Courier and Customer
+    // Rank 4 (Courier) can ONLY access Courier
     if (rank === 4) {
-      return role === 'COURIER' || role === 'CUSTOMER';
+      return role === 'COURIER';
     }
 
-    // Rank 5 (Merchant) can ONLY access Merchant and Customer
+    // Rank 5 (Merchant) can ONLY access Merchant
     if (rank === 5) {
-      return role === 'MERCHANT' || role === 'CUSTOMER';
+      return role === 'MERCHANT';
     }
 
     return false;
@@ -287,6 +293,7 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const getRoleLabel = (role: UserRole, adminTab?: string): string => {
     if (role === 'CUSTOMER') return 'الصفحة الرئيسية للزوار';
+    if (role === 'JOB_SEEKER') return 'بوابة التوظيف وطلب العمل الجديد';
     if (role === 'MERCHANT') return 'بوابة التاجر والمتجر';
     if (role === 'COURIER') return 'دائرة العمليات الميدانية للمندوب';
     if (role === 'ADMIN' || role === 'OPERATIONS' || role === 'ACCOUNTANT') {
@@ -666,7 +673,93 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   };
 
+  // Google Sign-In with Firebase Auth & Firestore Persistence
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string; error?: string }> => {
+    try {
+      const res = await signInWithGoogle();
+      if (!res.success || !res.user) {
+        return { success: false, message: 'تعذر إتمام تسجيل الدخول عبر Google', error: res.error };
+      }
+      const fbUser = res.user;
+
+      let assignedRole: UserRole = 'CUSTOMER';
+      let hierarchyRank = 0;
+      let assignedRingLevel: OnionRingLevel = 5;
+      let ringName = 'الدائرة الخامسة: الشركاء والعملاء';
+      let department = 'الخدمات اللوجستية';
+
+      const email = fbUser.email?.toLowerCase() || '';
+      if (email.includes('admin') || email.includes('owner') || email === 'cado111113@gmail.com') {
+        assignedRole = 'ADMIN';
+        hierarchyRank = 1;
+        assignedRingLevel = 1;
+        ringName = 'الدائرة الأولى: نواة المنظومة (المالك)';
+        department = 'الإدارة العليا والمتابعة الرقمية';
+      } else if (email.includes('merchant') || email.includes('shop') || email.includes('store')) {
+        assignedRole = 'MERCHANT';
+        hierarchyRank = 5;
+        assignedRingLevel = 5;
+        ringName = 'الدائرة الخامسة: المتاجر والشركاء';
+        department = 'بوابة المتاجر والشحنات';
+      } else {
+        assignedRole = 'MERCHANT';
+        hierarchyRank = 5;
+        assignedRingLevel = 5;
+        ringName = 'الدائرة الخامسة: المتاجر والشركاء';
+        department = 'بوابة المتاجر والشحنات';
+      }
+
+      const googleUser: AuthUser = {
+        id: `USR-FB-${fbUser.uid.slice(0, 8)}`,
+        name: fbUser.displayName || fbUser.email?.split('@')[0] || 'مستخدم Google المعتمد',
+        role: assignedRole,
+        emailOrPhone: fbUser.email || fbUser.phoneNumber || '',
+        department,
+        assignedRingLevel,
+        ringName,
+        avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        joinedDate: new Date().toISOString().slice(0, 10),
+        isAuthenticated: true,
+        hierarchyRank,
+        firebaseUid: fbUser.uid,
+        isGoogleUser: true,
+      };
+
+      // Persist profile to Firestore
+      try {
+        await setDoc(doc(db, 'users', fbUser.uid), {
+          id: googleUser.id,
+          name: googleUser.name,
+          email: fbUser.email,
+          role: assignedRole,
+          hierarchyRank,
+          assignedRingLevel,
+          ringName,
+          photoURL: fbUser.photoURL,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      } catch (firestoreErr) {
+        console.warn('Firestore write note:', firestoreErr);
+      }
+
+      setCurrentUser(googleUser);
+      setCurrentRole(assignedRole);
+      setCurrentRingLevel(assignedRingLevel);
+      setClearanceNotice(null);
+      localStorage.setItem('sanad_current_user', JSON.stringify(googleUser));
+
+      return {
+        success: true,
+        message: `تم التحقق بنجاح عبر Google Firebase (${googleUser.name}) مع اعتماد ${ringName}`,
+      };
+    } catch (err: any) {
+      console.error('loginWithGoogle error:', err);
+      return { success: false, message: 'حدث خطأ أثناء الاتصال بخدمة Google Firebase', error: err.message };
+    }
+  };
+
   const logoutUser = () => {
+    logoutFromFirebase().catch(() => {});
     setCurrentUser(DEFAULT_GUEST_USER);
     setCurrentRingLevel(5);
     setCurrentRole('CUSTOMER');
@@ -992,6 +1085,42 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       message: `تم تحويل مبلغ ${amount.toLocaleString('ar-EG')} ج.م بنجاح إلى حساب ${accountDetails} عبر ${method} (رقم مرجعي: ${referenceNumber}).`,
       transaction: newTx,
     };
+  };
+
+  const registerMerchant = (data: MerchantRegistrationData): Merchant => {
+    const newId = `MCH-${Date.now().toString().slice(-4)}`;
+    const newMerchant: Merchant = {
+      id: newId,
+      name: data.name,
+      brandName: data.brandName,
+      phone: data.phone,
+      city: data.city,
+      address: data.address,
+      businessType: data.businessType || 'تجارة إلكترونية عامة',
+      activeShipmentsCount: 0,
+      deliveredCount: 0,
+      returnRate: 0,
+      pendingBalance: 0,
+      rating: 5.0,
+    };
+
+    setMerchants((prev) => [newMerchant, ...prev]);
+    setActiveMerchantId(newId);
+
+    // Automatically create a notification task in operations agenda
+    addAgendaTask({
+      title: `انضمام تاجر جديد للمنظومة: ${data.brandName}`,
+      source: 'MERCHANT_APP',
+      clientName: data.brandName,
+      clientPhone: data.phone,
+      type: 'merchant_partnership',
+      priority: 'high',
+      status: 'NEW',
+      summary: `تم تسجيل متجر (${data.brandName}) لصاحبه (${data.name}) في ${data.city} - ${data.address}. النشاط: ${data.businessType}. وسيلة التحويل / إنستاباي: ${data.bankOrInstaPay || 'لم تسجل بعد'}.`,
+      suggestedAction: 'تواصل منسق العمليات لتأكيد أول استلام شحنات (First Pickup) وتسليم بوالص الشحن.',
+    });
+
+    return newMerchant;
   };
 
   const verifyAndDeliverShipment = (
@@ -1324,6 +1453,7 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         currentRingLevel,
         setCurrentRingLevel,
         loginUser,
+        loginWithGoogle,
         registerUser,
         logoutUser,
         quickSwitchUser,
@@ -1359,6 +1489,7 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         payoutTransactions,
         governoratesCoverage,
         requestMerchantPayout,
+        registerMerchant,
         addWorkerTask,
         updateWorkerTaskStatus,
         submitOnboardingApplication,

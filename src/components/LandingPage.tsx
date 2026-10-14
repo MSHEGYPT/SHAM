@@ -462,6 +462,53 @@ print("Shipment Created:", response.json())`;
           </div>
         </div>
 
+        {/* Dedicated Dual Portals Gateway Banner (Merchants & Job Seekers) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto pt-2">
+          {/* Card 1: Merchant App Gateway */}
+          <div
+            onClick={() => navigateToView('MERCHANT', undefined, 'بوابة التاجر')}
+            className="group p-5 bg-gradient-to-br from-white to-amber-50/60 rounded-3xl border-2 border-amber-300 hover:border-amber-500 shadow-md hover:shadow-xl transition-all cursor-pointer text-right flex items-center justify-between gap-4"
+          >
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black">
+                <Building2 className="w-3 h-3 text-amber-700" />
+                <span>للتجار وأصحاب المتاجر</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-amber-700 transition-colors">
+                🏪 تطبيق وبوابة التجار المعتمدة
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                سجل متجرك فوراً، اشحن لجميع المحافظات، واطلب تحصيل الكاش اليومي عبر InstaPay.
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-400 group-hover:bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110">
+              <ArrowLeft className="w-6 h-6 rotate-180" />
+            </div>
+          </div>
+
+          {/* Card 2: Job Seeker Gateway */}
+          <div
+            onClick={() => navigateToView('JOB_SEEKER', undefined, 'بوابة التوظيف')}
+            className="group p-5 bg-gradient-to-br from-white to-purple-50/60 rounded-3xl border-2 border-purple-300 hover:border-purple-500 shadow-md hover:shadow-xl transition-all cursor-pointer text-right flex items-center justify-between gap-4"
+          >
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black">
+                <Truck className="w-3 h-3 text-purple-700" />
+                <span>لطالبي العمل والكباتن الجدد</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-purple-700 transition-colors">
+                🛵 بوابة التوظيف وطلب عمل جديد
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                انضم لأسطول كباتن مشاوير بدخل يصل لـ 20,000 ج.م شهرياً مع فحص أمني وتعيين فوري.
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-purple-700 group-hover:bg-purple-800 text-white flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110">
+              <ArrowLeft className="w-6 h-6 rotate-180" />
+            </div>
+          </div>
+        </div>
+
         {/* ======================================================== */}
         {/* HERO INTERACTIVE CONSOLE (Tabs: Track / Rate Calculator / Onboard) */}
         {/* ======================================================== */}

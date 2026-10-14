@@ -48,11 +48,25 @@ export const MerchantPortalView: React.FC<MerchantPortalViewProps> = ({
     fulfillmentItems,
     payoutTransactions,
     requestMerchantPayout,
+    registerMerchant,
   } = useLogistics();
 
   const [activeTab, setActiveTab] = useState<'SHIPMENTS' | 'PAYOUT_WALLET' | 'FULFILLMENT' | 'INTEGRATIONS' | 'COMPLAINTS'>('SHIPMENTS');
   const [selectedQrShipment, setSelectedQrShipment] = useState<Shipment | null>(null);
   const [complaintTracking, setComplaintTracking] = useState<string>('');
+
+  // New Merchant Registration Modal State
+  const [isRegisterStoreModalOpen, setIsRegisterStoreModalOpen] = useState(false);
+  const [newStoreForm, setNewStoreForm] = useState({
+    name: '',
+    brandName: '',
+    phone: '',
+    city: 'القاهرة',
+    address: '',
+    businessType: 'ملابس وأزياء إلكترونية',
+    bankOrInstaPay: '',
+  });
+  const [registerNotice, setRegisterNotice] = useState<string | null>(null);
 
   // Instant Payout Modal State
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
@@ -106,6 +120,36 @@ export const MerchantPortalView: React.FC<MerchantPortalViewProps> = ({
     }, 2500);
   };
 
+  const handleRegisterNewStore = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStoreForm.name || !newStoreForm.brandName || !newStoreForm.phone) return;
+
+    const newMerchant = registerMerchant({
+      name: newStoreForm.name,
+      brandName: newStoreForm.brandName,
+      phone: newStoreForm.phone,
+      city: newStoreForm.city,
+      address: newStoreForm.address || 'المقر الرئيسي للمتجر',
+      businessType: newStoreForm.businessType,
+      bankOrInstaPay: newStoreForm.bankOrInstaPay,
+    });
+
+    setRegisterNotice(`تم تسجيل المتجر (${newMerchant.brandName}) بنجاح وتفعيله بالمنظومة!`);
+    setTimeout(() => {
+      setRegisterNotice(null);
+      setIsRegisterStoreModalOpen(false);
+      setNewStoreForm({
+        name: '',
+        brandName: '',
+        phone: '',
+        city: 'القاهرة',
+        address: '',
+        businessType: 'ملابس وأزياء إلكترونية',
+        bankOrInstaPay: '',
+      });
+    }, 2200);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Merchant Header */}
@@ -143,6 +187,15 @@ export const MerchantPortalView: React.FC<MerchantPortalViewProps> = ({
               ))}
             </select>
           </div>
+
+          <button
+            onClick={() => setIsRegisterStoreModalOpen(true)}
+            className="px-3 py-2 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer shrink-0"
+            title="تسجيل متجر أو براند جديد بالمنظومة"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>تسجيل متجر جديد</span>
+          </button>
 
           <button
             onClick={() => setIsPayoutModalOpen(true)}
@@ -723,6 +776,149 @@ export const MerchantPortalView: React.FC<MerchantPortalViewProps> = ({
                 </>
               )}
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* New Merchant Registration Modal */}
+      {isRegisterStoreModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">تسجيل متجر أو براند جديد</h3>
+                  <p className="text-xs text-slate-500">انضم لمنظومة مشاوير للشحن الفوري والتوريد اليومي</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRegisterStoreModalOpen(false)}
+                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {registerNotice ? (
+              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2 animate-in fade-in">
+                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-emerald-900 text-sm">{registerNotice}</h4>
+                <p className="text-xs text-emerald-700">جاري نقلك فوراً إلى لوحة تحكم المتجر الجديد...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleRegisterNewStore} className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">اسم المتجر / البراند التجاري *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="مثال: متجر الأناقة للأزياء"
+                      value={newStoreForm.brandName}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, brandName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">اسم المالك / المدير المسؤول *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="مثال: م. طارق الشناوي"
+                      value={newStoreForm.name}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, name: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">رقم الهاتف والواتساب *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="01012345678"
+                      value={newStoreForm.phone}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, phone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono font-bold focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">المحافظة / المدينة *</label>
+                    <select
+                      value={newStoreForm.city}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, city: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    >
+                      <option value="القاهرة">القاهرة</option>
+                      <option value="الجيزة">الجيزة</option>
+                      <option value="الإسكندرية">الإسكندرية</option>
+                      <option value="القليوبية">القليوبية</option>
+                      <option value="الشرقية">الشرقية</option>
+                      <option value="الدقهلية">الدقهلية</option>
+                      <option value="الغربية">الغربية</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">عنوان المستودع أو مقر الاستلام الافتراضي</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: التجمع الخامس - مول تريفيوم - مكتب 204"
+                    value={newStoreForm.address}
+                    onChange={(e) => setNewStoreForm({ ...newStoreForm, address: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">طبيعة المنتجات والنشاط</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: ملابس، إلكترونيات، مستحضرات"
+                      value={newStoreForm.businessType}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, businessType: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">حساب إنستاباي / التحويل البنكي لتحصيل الكاش</label>
+                    <input
+                      type="text"
+                      placeholder="store@instapay أو رقم IBAN"
+                      value={newStoreForm.bankOrInstaPay}
+                      onChange={(e) => setNewStoreForm({ ...newStoreForm, bankOrInstaPay: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterStoreModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 cursor-pointer font-bold"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl cursor-pointer shadow-xs transition-transform hover:scale-[1.01]"
+                  >
+                    تأكيد التسجيل وتفعيل المتجر
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

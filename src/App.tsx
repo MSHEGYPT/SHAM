@@ -19,6 +19,7 @@ import { OnionRingNavigator } from './components/OnionRingNavigator';
 import { StaffOnboardingAndSupervisionRing } from './components/StaffOnboardingAndSupervisionRing';
 import { WorkerTasksAndProfileRing } from './components/WorkerTasksAndProfileRing';
 import { SmartComplaintsAiDesk } from './components/SmartComplaintsAiDesk';
+import { JobSeekerPortalView } from './components/JobSeekerPortalView';
 import {
   Package,
   Users,
@@ -236,6 +237,43 @@ const MainContent: React.FC = () => {
               onOpenOrderParser={() => setIsOrderParserOpen(true)}
               onOpenNewPickup={() => setIsAiChatOpen(true)}
             />
+          </div>
+        )}
+
+        {/* VIEW 3.5: Job Seeker & Careers Portal */}
+        {currentRole === 'JOB_SEEKER' && (
+          <div className="space-y-6">
+            {/* Job Seeker Breadcrumbs & Back Bar */}
+            <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {canGoBack && (
+                  <button
+                    onClick={goBack}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-300 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={`الرجوع إلى: ${previousPageLabel || 'السابق'}`}
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                    <span>رجوع</span>
+                    {previousPageLabel && <span className="hidden sm:inline text-amber-700 font-normal">({previousPageLabel})</span>}
+                  </button>
+                )}
+                <button
+                  onClick={() => navigateToView('CUSTOMER', undefined, 'الصفحة الرئيسية')}
+                  className="text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>الرئيسية</span>
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="font-bold text-amber-700 shrink-0">بوابة التوظيف وطلب العمل الجديد</span>
+              </div>
+
+              <span className="text-[11px] bg-amber-50 text-amber-800 font-bold px-3 py-1 rounded-full border border-amber-200 shrink-0 hidden sm:inline">
+                انضم لأسطول مشاوير
+              </span>
+            </div>
+
+            <JobSeekerPortalView />
           </div>
         )}
 

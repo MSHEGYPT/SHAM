@@ -37,29 +37,64 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 1. AI Customer Support & Instant Archiving Agent
+// 1. AI Customer Support & Multi-Turn Logistics Agent
 app.post('/api/ai/chat', async (req, res) => {
-  const { message, history = [], userType = 'general' } = req.body;
+  const { message, history = [], userType = 'general', modelComplexity = 'general', useMapsGrounding = false } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'الرسالة مطلوبة' });
   }
 
-  // System instruction
-  const systemInstruction = `أنت "مشاوير الذكي" - المساعد الرقمي الرسمي لمنظومة "مشاوير للخدمات اللوجستية وإدارة التوصيل".
+  // Choose model based on task complexity
+  let selectedModel = 'gemini-3.8-flash';
+  if (modelComplexity === 'fast') {
+    selectedModel = 'gemini-3.1-flash-lite';
+  } else if (modelComplexity === 'complex') {
+    selectedModel = 'gemini-4-argon';
+  }
+
+  // System instruction defining assistant role
+  const systemInstruction = `أنت "مشاوير الذكي" - المساعد الرقمي واللوجستي الذكي لمنظومة "مشاوير للخدمات اللوجستية وإدارة التوصيل".
 أنت تتحدث باللغة العربية الفصحى أو بلهجة مصرية مهذبة ومحترفة جداً.
 المنظومة تقدم:
-- خدمات شحن وتوصيل فوري للتجار والمتاجر الإلكترونية في شتى المحافظات والمدن.
+- خدمات شحن وتوصيل فوري للتجار والمتاجر الإلكترونية في شتى المحافظات والمدن مع دعم الخرائط وتتبع العناوين.
 - نظام تسليم آمن برمز سري OTP لضمان عدم التلاعب (Zero Corruption).
-- تحصيل الأموال COD وتوريد يومي في حساب التاجر.
-- إدارة مرتجعات دقيقة وتسليم جزئي.
+- تحصيل الأموال COD وتوريد يومي في حساب التاجر (إنستاباي / بنك / فوري).
+- بوابة توظيف وانضمام فورية للمناديب والكباتن الجدد بدخل يصل إلى 20,000 ج.م شهرياً.
 
-مهامك:
-1. الرد بلطف واحترافية على العميل أو التاجر أو السائل.
-2. إذا كان الحديث يحتوي على رغبة في التعاون كتاجر، أو طلب استلام أوردرات، أو استفسار عن تسعيرة، أو تقديم شكوى ضد مندوب أو سوء سلوك، قم بتحديد ذلك بدقة.
-3. يجب أن تكون مخرجاتك بتنسيق JSON حصراً بالشكل التالي:
+مهامك الفائقة الأهمية:
+1. الرد بلطف واحترافية على العميل أو التاجر أو طالب العمل الجديد.
+2. الكشف عن سياق الحديث بدقة فائقة:
+   - سياق التاجر (Merchant): إذا كان المتحدث تاجراً، أو صاحب متجر، أو يسأل عن شحن بضاعته، أو التعاقد، قم بتهيئة بطاقة تسجيل التاجر ("type": "MERCHANT") واستخرج اسم المتجر، رقم الهاتف، المحافظة، ونوع النشاط إن ذكرهما.
+   - سياق طالب العمل (Job Seeker): إذا كان المتحدث يسأل عن وظيفة، أو يريد العمل كمندوب أو كابتن توصيل، أو يمتلك موتوسيكل/سيارة ويريد الانضمام للأسطول، قم بتهيئة بطاقة طلب العمل الفوري ("type": "JOB_SEEKER") واستخرج اسمه، رقم هاتفه، نوع المركبة، والنطاق السكني إن ذكرهما.
+3. إذا سأل المستخدم عن عنوان أو موقع جغرافي أو مسار أو فرع، قدم معلومات جغرافية دقيقة عن المعالم والشوارع في مصر.
+4. يجب أن تكون مخرجاتك بتنسيق JSON حصراً بالشكل التالي:
 {
   "reply": "نص الرد الموجه للعميل بأسلوب مهذب ومقنع ومفيد",
+  "isMapsGrounded": true/false,
+  "intake": {
+    "detected": true/false,
+    "type": "MERCHANT" | "JOB_SEEKER" | "NONE",
+    "prompt": "رسالة توضيحية للإجراء، مثلاً: قمت بإعداد بيانات انضمامك كتاجر معتمد؛ يمكنك مراجعتها وتأكيدها فوراً للدخول في المنظومة!",
+    "merchantData": {
+      "brandName": "اسم المتجر أو المقترح",
+      "ownerName": "اسم التاجر إن ذكره",
+      "phone": "رقم الهاتف إن ذكره",
+      "city": "القاهرة",
+      "address": "العنوان إن ذكره",
+      "businessType": "تجارة إلكترونية عامة",
+      "bankOrInstaPay": ""
+    },
+    "applicantData": {
+      "fullName": "اسم المتقدم إن ذكره",
+      "phone": "رقم الهاتف إن ذكره",
+      "nationalId": "",
+      "desiredRole": "COURIER",
+      "assignedZone": "مدينة نصر والقاهرة الجديدة",
+      "vehicleType": "MOTORCYCLE" | "VAN" | "CAR" | "BICYCLE" | "NONE",
+      "experienceYears": 2
+    }
+  },
   "archivedTask": {
     "detected": true/false,
     "type": "merchant_partnership" | "pickup_request" | "order_inquiry" | "complaint_fraud" | "general",
@@ -74,18 +109,87 @@ app.post('/api/ai/chat', async (req, res) => {
 قم بإرجاع JSON صالح فقط بدون نصوص تمهيدية خارج الـ JSON.`;
 
   if (!ai) {
-    // Smart fallback if API key is not yet set
+    // Smart fallback with intelligent Arabic context parser
+    const phoneMatch = message.match(/(01[0125]\d{8})/);
+    const phone = phoneMatch ? phoneMatch[0] : '';
+    const isJobSeeker = /عايز اشتغل|شغل|وظيفة|وظايف|طالب عمل|مندوب|كابتن|دليفري|سواق|معايا موتوسيكل|انضم|تقديم على شغل|توظيف|ببحث عن شغل/i.test(message);
+    const isMerchant = /تاجر|متجر|بضاعة|شحن|أوردرات|شحن منتجات|عايز اشحن|تعاقد|صاحب محل|ببيع اونلاين|ستور|براند|منتجاتي/i.test(message);
+
+    if (isJobSeeker) {
+      return res.json({
+        reply: `أهلاً بك يا بطل! يسعدنا جداً انضمامك لأسطول كباتن مشاوير. نوفر لك عمولات يومية مجزية، تأمين شامل، وتطبيق ذكي يضمن حقوقك بنسبة 100%. لقد جهزت لك بطاقة طلب الانضمام المباشر، يمكنك تأكيد بياناتك بالأسفل لإدراجك فوراً في المنظومة!`,
+        isMapsGrounded: false,
+        intake: {
+          detected: true,
+          type: 'JOB_SEEKER',
+          prompt: 'تم تجهيز استمارة طلب العمل الفوري بناءً على رسالتك؛ اضغط للاعتماد والدخول في المنظومة الآن!',
+          applicantData: {
+            fullName: 'كابتن مشاوير الجديد',
+            phone: phone || '01012345678',
+            nationalId: '29801010101234',
+            desiredRole: 'COURIER',
+            assignedZone: 'مدينة نصر والقاهرة الجديدة',
+            vehicleType: /موتوسيكل|دراجة نارية|سكوتر/i.test(message) ? 'MOTORCYCLE' : /فان|عربية مقفولة/i.test(message) ? 'VAN' : /سيارة|عربية/i.test(message) ? 'CAR' : 'MOTORCYCLE',
+            experienceYears: 2,
+          },
+        },
+        archivedTask: {
+          detected: true,
+          type: 'general',
+          title: `طلب عمل جديد وارد من المساعد الذكي (${phone || 'بانتظار البيانات'})`,
+          priority: 'high',
+          summary: message,
+          clientName: 'طالب عمل / كابتن جديد',
+          clientPhone: phone,
+          suggestedAction: 'توجيه المتقدم إلى إدارة التدقيق ورقابة العاملين (الدائرة #2)',
+        },
+      });
+    }
+
+    if (isMerchant) {
+      return res.json({
+        reply: `أهلاً بك يا شريك النجاح! في مشاوير نوفر لتجارتك شحن فوري لجميع محافظات مصر، تحصيل كاش COD وتوريد يومي عبر InstaPay، ونسبة تسليم تصل إلى 98%. لقد أعددت لك بطاقة تسجيل متجرك فورياً، راجع بياناتك واضغط تأكيد للانضمام لمنظومة التجار!`,
+        isMapsGrounded: false,
+        intake: {
+          detected: true,
+          type: 'MERCHANT',
+          prompt: 'تم إعداد بطاقة تسجيل المتجر؛ اضغط لاعتماد المتجر والدخول المباشر إلى لوحة التاجر!',
+          merchantData: {
+            brandName: 'متجر التاجر الجديد',
+            ownerName: 'التاجر الشريك',
+            phone: phone || '01098765432',
+            city: 'القاهرة',
+            address: 'المقر التجاري',
+            businessType: 'تجارة إلكترونية عامة',
+            bankOrInstaPay: phone ? `${phone}@instapay` : 'store@instapay',
+          },
+        },
+        archivedTask: {
+          detected: true,
+          type: 'merchant_partnership',
+          title: `انضمام متجر جديد عبر المساعد الذكي (${phone || 'بدون هاتف'})`,
+          priority: 'high',
+          summary: message,
+          clientName: 'تاجر جديد',
+          clientPhone: phone,
+          suggestedAction: 'تحديد موعد استلام الشحنات الأول والتواصل مع التاجر',
+        },
+      });
+    }
+
     return res.json({
-      reply: `مرحباً بك في مشاوير للخدمات اللوجستية! نسعد بخدمتك. لقد استلمنا رسالتك: "${message}". سيقوم فريق العمليات بمتابعة طلبك والتواصل معك فوراً لترتيب كافة التفاصيل.`,
+      reply: `مرحباً بك في مشاوير للخدمات اللوجستية! نسعد بخدمتك. لقد استلمنا رسالتك: "${message}". نحن هنا لمساعدتك في تتبع الشحنات، تسجيل المتاجر الجديدة، أو تقديم طلبات العمل لكباتن التوصيل. كيف يمكنني خدمتك بشكل أفضل؟`,
+      isMapsGrounded: false,
+      intake: { detected: false, type: 'NONE' },
       archivedTask: {
         detected: true,
-        type: message.includes('تاجر') || message.includes('متجر') ? 'merchant_partnership' : 'order_inquiry',
+        type: 'order_inquiry',
         title: `طلب وارد عبر الدردشة: ${message.slice(0, 30)}...`,
         priority: 'medium',
         summary: message,
         clientName: 'عميل المنصة',
-        clientPhone: '',
-        suggestedAction: 'توجيه الطلب لخدمة العملاء للتواصل المباشر',
+        clientPhone: phone,
+        suggestedAction: 'متابعة خدمة العملاء والتواصل عند الحاجة',
       },
     });
   }
@@ -96,12 +200,47 @@ app.post('/api/ai/chat', async (req, res) => {
 ${message}
 
 تاريخ المحادثة السابقة:
-${JSON.stringify(history.slice(-4))}
+${JSON.stringify(history.slice(-6))}
 
 أجب بتنسيق JSON المطلوب.`;
 
+    const isLocationQuery = useMapsGrounding || /عنوان|خريطة|خريطه|موقع|شارع|طريق|حي|محافظة|فرع|مستودع|لوكيشن|مسار/i.test(message);
+
+    // If location query and using gemini-3.8-flash, we can leverage Google Maps Grounding
+    if (isLocationQuery && selectedModel === 'gemini-3.8-flash') {
+      try {
+        const mapsResponse = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: `بصفتك مساعد لوجستي لمنظومة مشاوير، أجب عن استفسار الموقع الجغرافي التالي باستخدام بيانات الخرائط بدقة: "${message}". وضح الشوارع والمعالم وتيسير الوصول اللوجستي في مصر.`,
+          config: {
+            tools: [{ googleMaps: {} }],
+            temperature: 0.2,
+          },
+        });
+
+        const mapsText = mapsResponse.text || '';
+        const grounding = mapsResponse.candidates?.[0]?.groundingMetadata;
+
+        return res.json({
+          reply: mapsText,
+          isMapsGrounded: true,
+          groundingMetadata: grounding,
+          archivedTask: {
+            detected: true,
+            type: 'order_inquiry',
+            title: `استعلام موقع جغرافي: ${message.slice(0, 30)}...`,
+            priority: 'low',
+            summary: message,
+            suggestedAction: 'تأكيد النطاق الجغرافي لخط السير',
+          },
+        });
+      } catch (mapsErr) {
+        console.warn('Google Maps Grounding tool attempt returned, proceeding with structured response:', mapsErr);
+      }
+    }
+
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: selectedModel,
       contents: formattedPrompt,
       config: {
         systemInstruction,
@@ -116,6 +255,7 @@ ${JSON.stringify(history.slice(-4))}
     console.error('Gemini chat error:', error);
     res.json({
       reply: `أهلاً بك في منصة مشاوير اللوجستية. تم استلام رسالتك بنجاح وجارٍ مراجعتها من مشرف العمليات. يمكنك أيضاً التواصل مع إدارة العمليات مباشرة عبر الأرقام الرسمية أو لوحة التحكم.`,
+      isMapsGrounded: false,
       archivedTask: {
         detected: true,
         type: 'general',
@@ -124,6 +264,49 @@ ${JSON.stringify(history.slice(-4))}
         summary: message,
         suggestedAction: 'متابعة الدعم الفني',
       },
+    });
+  }
+});
+
+// Dedicated Google Maps Grounding Endpoint
+app.post('/api/ai/maps-grounding', async (req, res) => {
+  const { query, destination, origin, city = 'القاهرة' } = req.body;
+
+  if (!query && !destination) {
+    return res.status(400).json({ error: 'الاستفسار أو الوجهة مطلوبة' });
+  }
+
+  const prompt = query || `تحقق من تفاصيل الموقع الجغرافي والمسار الأفضل بين ${origin || 'المستودع الرئيسي'} و ${destination} في محافظة ${city} واذكر الشوارع الرئيسية والمعالم القريبة لتسهيل وصول مندوب الشحن والتسليم.`;
+
+  if (!ai) {
+    return res.json({
+      success: true,
+      text: `تم تدقيق العنوان في نطاق ${city}: المنطقة مغطاة بالكامل بواسطة أسطول المناديب الميداني في نطاق ${destination || query}.`,
+      sources: ['خريطة النطاقات اللوجستية المعتمدة'],
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+        temperature: 0.2,
+      },
+    });
+
+    res.json({
+      success: true,
+      text: response.text,
+      groundingMetadata: response.candidates?.[0]?.groundingMetadata,
+    });
+  } catch (error: any) {
+    console.error('Maps grounding error:', error);
+    res.json({
+      success: false,
+      text: `تعذر الاتصال بخدمة Google Maps Grounding حالياً، تم استخدام النطاق الافتراضي لـ ${destination || query || city}.`,
+      error: error.message,
     });
   }
 });

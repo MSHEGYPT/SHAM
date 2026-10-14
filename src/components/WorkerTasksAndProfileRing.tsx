@@ -17,9 +17,14 @@ import {
   FileCheck,
   Save,
   RotateCcw,
+  BarChart3,
+  TrendingUp,
+  ListTodo,
+  Activity,
 } from 'lucide-react';
 import { useLogistics } from '../context/LogisticsContext';
 import { WorkerTask } from '../types';
+import { CourierPerformanceAnalytics } from './CourierPerformanceAnalytics';
 
 export const WorkerTasksAndProfileRing: React.FC = () => {
   const {
@@ -40,6 +45,7 @@ export const WorkerTasksAndProfileRing: React.FC = () => {
     staff.find((s) => s.role === 'COURIER') ||
     staff[3];
 
+  const [activeSection, setActiveSection] = useState<'OVERVIEW' | 'ANALYTICS' | 'TASKS'>('OVERVIEW');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'TODO' | 'COMPLETED'>('ALL');
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
@@ -162,6 +168,18 @@ export const WorkerTasksAndProfileRing: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveSection(activeSection === 'ANALYTICS' ? 'OVERVIEW' : 'ANALYTICS')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+              activeSection === 'ANALYTICS'
+                ? 'bg-amber-400 text-slate-950 border-amber-300 font-black'
+                : 'bg-purple-800/80 hover:bg-purple-700 text-purple-200 border-purple-600'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>تحليلات أداء المناديب</span>
+          </button>
+
           <button
             onClick={() => setIsEditingProfile(!isEditingProfile)}
             className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
@@ -400,19 +418,77 @@ export const WorkerTasksAndProfileRing: React.FC = () => {
         </div>
       )}
 
-      {/* Task Filters & Action Header */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      {/* Section Switcher Tabs: Analytics vs Tasks */}
+      <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setActiveFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              activeFilter === 'ALL'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            onClick={() => setActiveSection('OVERVIEW')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeSection === 'OVERVIEW'
+                ? 'bg-slate-900 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
-            كافة المهام ({myTasks.length})
+            <Activity className="w-4 h-4 text-amber-400" />
+            <span>عرض شامل (التحليلات والمهام)</span>
           </button>
+
+          <button
+            onClick={() => setActiveSection('ANALYTICS')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeSection === 'ANALYTICS'
+                ? 'bg-purple-900 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-purple-600" />
+            <span>تحليلات أداء المناديب (Courier Performance Analytics)</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-mono">Recharts</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('TASKS')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeSection === 'TASKS'
+                ? 'bg-slate-900 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <ListTodo className="w-4 h-4 text-emerald-600" />
+            <span>جدول المهام الميدانية ({myTasks.length})</span>
+          </button>
+        </div>
+
+        <div className="text-[11px] text-slate-500 font-medium px-2">
+          {activeSection === 'ANALYTICS' && 'عرض الرسوم البيانية لتسليمات وتأخيرات أسطول المناديب'}
+          {activeSection === 'TASKS' && 'متابعة وتأكيد تسليمات الطرود والمهام لوردية اليوم'}
+          {activeSection === 'OVERVIEW' && 'المنظومة الميدانية: التحليلات البيانية وجدول المهام معاً'}
+        </div>
+      </div>
+
+      {/* Courier Performance Analytics Dashboard Section */}
+      {(activeSection === 'OVERVIEW' || activeSection === 'ANALYTICS') && (
+        <div className="animate-in fade-in duration-200">
+          <CourierPerformanceAnalytics />
+        </div>
+      )}
+
+      {/* Tasks Section */}
+      {(activeSection === 'OVERVIEW' || activeSection === 'TASKS') && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Task Filters & Action Header */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeFilter === 'ALL'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                كافة المهام ({myTasks.length})
+              </button>
 
           <button
             onClick={() => setActiveFilter('TODO')}
@@ -524,6 +600,8 @@ export const WorkerTasksAndProfileRing: React.FC = () => {
           </div>
         )}
       </div>
+      </div>
+      )}
 
       {/* Modal: Add Custom Worker Task */}
       {isNewTaskModalOpen && (
